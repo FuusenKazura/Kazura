@@ -1,0 +1,5 @@
+package kazura
+
+class ID {
+
+}
