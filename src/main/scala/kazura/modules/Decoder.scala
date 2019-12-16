@@ -1,7 +1,7 @@
-package kazura.module
+package kazura.modules
 
 import chisel3._
-import kazura.model.Inst
+import kazura.models.Inst
 import kazura.util.Params._
 
 class IDIO extends Bundle {

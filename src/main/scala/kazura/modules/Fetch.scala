@@ -1,4 +1,4 @@
-package kazura.module
+package kazura.modules
 
 import chisel3._
 import kazura.util.Params._

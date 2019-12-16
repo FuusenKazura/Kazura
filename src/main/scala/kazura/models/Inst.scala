@@ -1,4 +1,4 @@
-package kazura.model
+package kazura.models
 
 import chisel3._
 import chisel3.util.Cat
