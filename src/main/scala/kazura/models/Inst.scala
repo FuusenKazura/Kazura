@@ -9,10 +9,10 @@ class Inst extends Bundle {
   scala.Predef.assert(rd.getWidth == RF.NUM_W)
   scala.Predef.assert(rs.getWidth == RF.NUM_W)
 
-  val op: UInt = UInt(4.W)
-  val rd: UInt = UInt(3.W)
-  val rs: UInt = UInt(3.W)
-  val disp6u: UInt = UInt(6.W)
+  lazy val op: UInt = UInt(4.W)
+  lazy val rd: UInt = UInt(3.W)
+  lazy val rs: UInt = UInt(3.W)
+  lazy val disp6u: UInt = UInt(6.W)
   def imm9u: UInt = Cat(rs, disp6u)
 }
 
