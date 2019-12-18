@@ -10,9 +10,10 @@ class IFIO extends Bundle {
   val out: IFOut = Output(new IFOut)
 }
 class IFIn extends Bundle {
-  val is_branch_or_jump_detected: Bool = Bool()
+  val is_branch: Bool = Bool()
+  val is_jump: Bool = Bool()
   val alu_out: UInt = UInt(LEN.W)
-  val stole: Bool = Bool()
+  val stall: Bool = Bool()
 }
 class IFOut extends Bundle {
   val pc: UInt = UInt(LEN.W)
@@ -26,7 +27,10 @@ class Fetch(init: Seq[UInt] = (10 until 266).map(_.U)) extends Module  {
   val pc: UInt = RegInit(0.U(LEN.W))
   val inst_mem: Vec[UInt] = RegInit(VecInit(init))
   total_cnt := total_cnt + 1.U
-  pc := pc + Mux(io.in.is_branch_or_jump_detected, io.in.alu_out, Mux(io.in.stole, 0.U, 1.U))
+  pc := MuxCase(pc+1.U, Seq(
+    io.in.is_jump -> io.in.alu_out,
+    io.in.is_branch -> io.in.alu_out,
+    io.in.stall -> pc))
   io.out.pc := pc
   io.out.total_cnt := total_cnt
   io.out.inst := inst_mem(pc).asTypeOf(new Inst)
