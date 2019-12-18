@@ -1,5 +1,5 @@
 package kazura.stages
 
-class MEM {
+class IM {
 
 }
