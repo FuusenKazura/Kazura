@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.Cat
 import kazura.util.Params._
 
-class Inst extends Bundle {
+class InstBits extends Bundle {
   // レジスタ長を変更した際破滅しないよう定義
   // scala.Predef.assert(rd.getWidth == RF.NUM_W)
   // scala.Predef.assert(rs.getWidth == RF.NUM_W)

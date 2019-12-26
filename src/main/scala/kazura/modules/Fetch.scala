@@ -2,7 +2,7 @@ package kazura.modules
 
 import chisel3._
 import chisel3.util.MuxCase
-import kazura.models.Inst
+import kazura.models.InstBits
 import kazura.util.Params._
 
 class IFIO extends Bundle {
@@ -18,7 +18,7 @@ class IFIn extends Bundle {
 class IFOut extends Bundle {
   val pc: UInt = UInt(LEN.W)
   val total_cnt: UInt = UInt(LEN.W)
-  val inst: Inst = new Inst
+  val inst: InstBits = new InstBits
 }
 
 class Fetch(init: Seq[UInt] = (10 until 266).map(_.U)) extends Module  {
@@ -33,6 +33,6 @@ class Fetch(init: Seq[UInt] = (10 until 266).map(_.U)) extends Module  {
     io.in.stall -> pc))
   io.out.pc := pc
   io.out.total_cnt := total_cnt
-  io.out.inst := inst_mem(pc).asTypeOf(new Inst)
+  io.out.inst := inst_mem(pc).asTypeOf(new InstBits)
 }
 

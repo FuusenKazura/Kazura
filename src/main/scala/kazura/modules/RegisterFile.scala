@@ -2,7 +2,7 @@ package kazura.modules
 
 import chisel3._
 import kazura.util.Params._
-import kazura.models.Inst
+import kazura.models.InstBits
 
 class RFIO extends Bundle {
   val reg_addr: Vec[UInt] = Vec(RF.READ_PORT, UInt(RF.NUM_W.W))
