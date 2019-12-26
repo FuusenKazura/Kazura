@@ -43,7 +43,7 @@ class Decoder extends Module {
     })
 }
 
-sealed trait Inst        {
+sealed trait Inst {
   val op: UInt;
   val alu_op: UInt;
   val cond_type: UInt;
