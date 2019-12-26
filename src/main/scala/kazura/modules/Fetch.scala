@@ -10,8 +10,8 @@ class FetchIO extends Bundle {
   val out: FetchOut = Output(new FetchOut)
 }
 class FetchIn extends Bundle {
-  val prev_pc: UInt = UInt()
-  val prev_total_cnt: UInt = UInt()
+  val prev_pc: UInt = UInt(LEN.W)
+  val prev_total_cnt: UInt = UInt(LEN.W)
   val is_branch: Bool = Bool()
   val is_jump: Bool = Bool()
   val alu_out: UInt = UInt(LEN.W)
@@ -25,8 +25,9 @@ class FetchOut extends Bundle {
 class Fetch extends Module  {
   val io: FetchIO = IO(new FetchIO)
   io.out.total_cnt := io.in.prev_total_cnt + 1.U
-  io.out.pc := MuxCase(io.in.prev_pc+1.U, Seq(
-    io.in.is_jump -> io.in.alu_out,
-    io.in.is_branch -> io.in.alu_out,
-    io.in.stall -> io.in.prev_pc))
+  io.out.pc := io.in.prev_pc.+(MuxCase(1.U, Seq(
+      io.in.is_jump   -> io.in.alu_out,
+      io.in.is_branch -> io.in.alu_out,
+      io.in.stall     -> 0.U))
+    )
 }
