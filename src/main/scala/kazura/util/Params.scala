@@ -45,5 +45,8 @@ object Params {
     val NO_CONDITIONAL = 1
     val EQ = 2
     val GT = 3
+
+    val NUM = 4
+    val NUM_W = log2Ceil(NUM)
   }
 }
