@@ -15,9 +15,9 @@ class IFIn extends Bundle {
   val stall: Bool = Bool()
 }
 class IFOut extends Bundle {
-  val pc = UInt(LEN.W)
-  val total_cnt = UInt(LEN.W)
-  val inst = new InstBits
+  val pc: UInt = UInt(LEN.W)
+  val total_cnt: UInt = UInt(LEN.W)
+  val inst_bits: InstBits = new InstBits
 }
 class IFIO extends Bundle {
   val in = Input(new IFIn)
@@ -40,5 +40,5 @@ class IF(val im: Seq[UInt] = (0 until 256).map(_.U)) extends Module {
 
   io.out.pc := pc
   io.out.total_cnt := total_cnt
-  io.out.inst := inst_mem(fetch.io.out.pc)
+  io.out.inst_bits := inst_mem(pc)
 }
