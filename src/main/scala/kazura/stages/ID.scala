@@ -7,6 +7,7 @@ import kazura.util.Params
 import kazura.util.Params._
 
 class IDIO extends Bundle {
+  val branch_graduated: Bool = Input(Bool())
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
   val prev_stall: Bool = Input(Bool())
@@ -38,19 +39,27 @@ class ID extends Module {
   reg_file.io.read_addr(1) := if_out.inst_bits.rs
   reg_file.io.write := rf_write
 
+  // 分岐命令実行中は後続の命令を発行しない
+  // -> TODO: busyの状態によってはバグるので要注意, busy_bitが全て解決してから発行可能に条件を変えたほうが良い？
+  val branch_issued: Bool = RegInit(false.B)
+  when (io.branch_graduated) {
+    branch_issued := false.B
+  } otherwise {
+    branch_issued := branch_issued || RegNext(ctrl.cond_type != COND_TYPE.NO_CONDITIONAL.U, false.B)
+  }
+
   // すべてのレジスタが準備できない時はhalt
-  val current_stall: Bool = !(busy_bit.io.rd_available && busy_bit.io.rs_available.forall((a:Bool) => a))
-  io.stall := RegNext(current_stall)
+  val busy: Bool = !(busy_bit.io.rd_available && busy_bit.io.rs_available.forall((a:Bool) => a))
+
+  val current_stall: Bool = busy || branch_issued
+  io.stall := RegNext(current_stall, false.B)
 
   // stall時の命令は無効化
-  when (!current_stall) {
-    io.ctrl := RegNext(decoder.io.ctrl)
-  } .otherwise {
-    io.ctrl := RegNext(DontCare)
-    io.ctrl.mem_w := RegNext(false.B)
-    io.ctrl.pc_w := RegNext(false.B)
-    io.ctrl.rf_w := RegNext(false.B)
-  }
+  val ctrl: Ctrl = Wire(new Ctrl)
+  ctrl := Mux(current_stall,
+    0.U.asTypeOf(new Ctrl),
+    decoder.io.ctrl)
+  io.ctrl := RegNext(ctrl)
 
   io.source(0) := RegNext(MuxLookup(0.U, decoder.io.source_sel(0), Seq(
     Source1.PC -> if_out.pc,
