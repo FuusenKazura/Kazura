@@ -10,7 +10,6 @@ class ALUIO extends Bundle {
   val source_enable: Bool = Input(Bool())
 
   val alu_out: UInt = Output(UInt(LEN.W))
-  val alu_out_enable: Bool = Output(Bool())
   val alu_ctrl_out: Ctrl = Output(new Ctrl)
 }
 
@@ -22,6 +21,5 @@ class ALU extends Module {
     ALUOP.AND -> io.source(0).*(io.source(1)),
     ALUOP.OR  -> io.source(0)./(io.source(1))
   )))
-  io.alu_out_enable := RegNext(io.source_enable, false.B)
-  io.alu_ctrl_out := RegNext(io.ctrl)
+  io.alu_ctrl_out := RegNext(io.ctrl, 0.U.asTypeOf(new Ctrl))
 }
