@@ -15,10 +15,12 @@ class IDIO extends Bundle {
 class Ctrl extends Bundle {
   val rd_addr: UInt = UInt(RF.NUM_W.W)
   val alu_op: UInt = UInt(ALUOP.NUM_W.W)
-  val cond_type: UInt = UInt(COND_TYPE.NUM_W.W)
+  val is_jump: Bool = Bool()
+  val is_branch: Bool = Bool()
   val rf_w: Bool = Bool()
   val mem_w: Bool = Bool()
-  val pc_w: Bool = Bool()
+  val rs1_use: Bool = Bool()
+  val rs2_use: Bool = Bool()
 }
 
 class Decoder extends Module {
@@ -28,11 +30,13 @@ class Decoder extends Module {
   def conDecodeCell[A <: Inst](inst: A, instBits: InstBits): Unit = {
     io.ctrl.rd_addr   := instBits.rd
     io.ctrl.alu_op    := inst.alu_op
-    io.ctrl.cond_type := inst.cond_type
+    io.ctrl.is_jump   := inst.is_jump
+    io.ctrl.is_branch := inst.is_branch
     io.ctrl.rf_w      := inst.rf_w
     io.ctrl.mem_w     := inst.mem_w
-    io.ctrl.pc_w      := inst.pc_w
     io.source_sel     := inst.source
+    io.ctrl.rs1_use    := inst.rs1_use
+    io.ctrl.rs2_use    := inst.rs2_use
   }
 
   insts.foldLeft(

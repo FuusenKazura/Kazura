@@ -18,8 +18,10 @@ class ALU extends Module {
   io.alu_out := RegNext(MuxLookup(0, io.ctrl.alu_op, Seq(
     ALUOP.ADD -> io.source(0).+(io.source(1)),
     ALUOP.SUB -> io.source(0).-(io.source(1)),
-    ALUOP.AND -> io.source(0).*(io.source(1)),
-    ALUOP.OR  -> io.source(0)./(io.source(1))
+    ALUOP.AND -> io.source(0).&(io.source(1)),
+    ALUOP.OR  -> io.source(0).|(io.source(1)),
+    ALUOP.EQ  -> io.source(0).===(io.source(1)),
+    ALUOP.GT  -> io.source(0).>(io.source(1)),
   )))
   io.alu_ctrl_out := RegNext(io.ctrl, 0.U.asTypeOf(new Ctrl))
 }

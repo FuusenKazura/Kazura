@@ -8,10 +8,10 @@ import kazura.util.Params._
 class BusyBitIO extends Bundle {
   val release: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
   val req_rs_addr: Vec[UInt] = Vec(RF.READ_PORT, Input(UInt(RF.NUM_W.W)))
+  val req_rd_w: Bool = Input(Bool())
   val req_rd_addr: UInt = Input(UInt(RF.NUM_W.W))
 
   val rs_available: Vec[Bool] = Vec(RF.READ_PORT, Output(Bool()))
-  val rd_available: Bool = Output(Bool())
 }
 class BusyBit extends Module {
   val io: BusyBitIO = IO(new BusyBitIO)
@@ -20,10 +20,13 @@ class BusyBit extends Module {
   for(i <- 0 until RF.READ_PORT) {
     io.rs_available(i) := !busy_bit(io.req_rs_addr(i))
   }
-  io.rd_available := !busy_bit(io.req_rd_addr)
+
   for (i <- 0 until RF.WRITE_PORT) {
+    // releaseとreserveが同じbusy_bitに起こることは無いので安全
     when (io.release(i).rf_w) {
       busy_bit(io.release(i).rd_addr) := false.B
+    } .elsewhen (io.req_rd_w && i.U === io.req_rd_addr) {
+      busy_bit(io.req_rd_addr) := true.B
     }
   }
 

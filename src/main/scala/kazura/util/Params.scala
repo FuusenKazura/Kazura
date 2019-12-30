@@ -16,19 +16,17 @@ object Params {
   object Source1 {
     val ZERO = 0
     val RD = 1
-    val PC = 2
     val DISP6U = 3
 
-    val NUM = 4
+    val NUM = 3
     val NUM_W = log2Ceil(NUM)
   }
   object Source2 {
     val ONE = 0
     val RS = 1
     val IMM9S = 2
-    val DISP6S = 3
 
-    val NUM = 4
+    val NUM = 3
     val NUM_W = log2Ceil(NUM)
   }
   object ALUOP {
@@ -36,8 +34,10 @@ object Params {
     val SUB = 1
     val AND = 2
     val OR = 3
+    val EQ = 4
+    val GT = 5
 
-    val NUM = 4
+    val NUM = 6
     val NUM_W = log2Ceil(NUM)
   }
   object COND_TYPE {

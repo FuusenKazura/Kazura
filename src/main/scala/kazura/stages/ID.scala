@@ -8,9 +8,11 @@ import kazura.util.Params._
 
 class IDIO extends Bundle {
   val branch_graduated: Bool = Input(Bool())
+  val branch_mispredicted: Bool = Input(Bool())
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
   val prev_stall: Bool = Input(Bool())
+  val next_pc: UInt = Output(UInt(LEN.W))
 
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
@@ -39,37 +41,39 @@ class ID extends Module {
   reg_file.io.read_addr(1) := if_out.inst_bits.rs
   reg_file.io.write := rf_write
 
-  // 分岐命令実行中は後続の命令を発行しない
-  // -> TODO: busyの状態によってはバグるので要注意, busy_bitが全て解決してから発行可能に条件を変えたほうが良い？
-  val branch_issued: Bool = RegInit(false.B)
-  when (io.branch_graduated) {
-    branch_issued := false.B
-  } otherwise {
-    branch_issued := branch_issued || RegNext(ctrl.cond_type != COND_TYPE.NO_CONDITIONAL.U, false.B)
+  // branch, jump命令の次の命令は無効化
+  val clear_instruction: Bool = RegInit(false.B)
+  when (decoder.io.ctrl.is_jump || decoder.io.ctrl.is_branch) {
+    clear_instruction := true.B
+  } .otherwise {
+    clear_instruction := false.B
   }
 
   // すべてのレジスタが準備できない時はhalt
-  val busy: Bool = !(busy_bit.io.rd_available && busy_bit.io.rs_available.forall((a:Bool) => a))
+  val operands_available: Bool = !(
+    (busy_bit.io.rs_available(0) || !decoder.io.ctrl.rs1_use) &&
+    (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
+  )
 
-  val current_stall: Bool = busy || branch_issued
-  io.stall := RegNext(current_stall, false.B)
+  val stall: Bool = !operands_available
+  io.stall := RegNext(stall, false.B)
 
   // stall時の命令は無効化
-  val ctrl: Ctrl = Wire(new Ctrl)
-  ctrl := Mux(current_stall,
+  val ctrl: Ctrl = Mux(stall || clear_instruction,
     0.U.asTypeOf(new Ctrl),
     decoder.io.ctrl)
   io.ctrl := RegNext(ctrl)
 
+  io.next_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
+    io.if_out.inst_bits.imm9s, io.if_out.inst_bits.disp6s))
+
   io.source(0) := RegNext(MuxLookup(0.U, decoder.io.source_sel(0), Seq(
-    Source1.PC -> if_out.pc,
     Source1.DISP6U -> if_out.inst_bits.disp6u,
     Source1.RD -> reg_file.io.out(0),
     Source1.ZERO -> 0.U
   )))
   io.source(1) := RegNext(MuxLookup(0.U, decoder.io.source_sel(1), Seq(
     Source2.IMM9S -> if_out.inst_bits.imm9s,
-    Source2.DISP6S -> if_out.inst_bits.disp6s,
     Source2.RS -> reg_file.io.out(1),
     Source2.ONE -> 1.U
   )))
