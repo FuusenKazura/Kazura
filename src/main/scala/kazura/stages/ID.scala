@@ -7,13 +7,14 @@ import kazura.util.Params
 import kazura.util.Params._
 
 class IDIO extends Bundle {
-  val branch_graduated: Bool = Input(Bool())
+  val predict: Bool = Input(Bool())
+  val branch_end: Bool = Input(Bool())
   val branch_mispredicted: Bool = Input(Bool())
+
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
-  val prev_stall: Bool = Input(Bool())
-  val next_pc: UInt = Output(UInt(LEN.W))
 
+  val next_pc: UInt = Output(UInt(LEN.W))
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
   val stall: Bool = Output(Bool())
@@ -21,10 +22,13 @@ class IDIO extends Bundle {
 
 class ID extends Module {
   val io: IDIO = IO(new IDIO)
+  // stallが起きていたら同じデータで再試行
+  // MEMO: ID以前からくるデータの場合stallに影響され、再試行が必要
+  val if_out: IFOut = Mux(io.stall, RegNext(if_out), io.if_out)
+  // stallが起きていたら同じデータで再試行
+  val predict: Bool = Mux(io.stall, RegNext(predict), io.predict)
 
-  // stallが起きると同じデータで再試行
-  val if_out: IFOut = Mux(io.prev_stall, RegNext(if_out), io.if_out)
-  // 書き込みデータはstall関係なし
+  // 書き込みデータはIDより後の話なのでstall関係なし
   val rf_write: Vec[RFWrite] = io.rf_write
 
   val busy_bit: BusyBit = Module(new BusyBit)
@@ -41,12 +45,28 @@ class ID extends Module {
   reg_file.io.read_addr(1) := if_out.inst_bits.rs
   reg_file.io.write := rf_write
 
-  // branch, jump命令の次の命令は無効化
-  val clear_instruction: Bool = RegInit(false.B)
-  when (decoder.io.ctrl.is_jump || decoder.io.ctrl.is_branch) {
+  // - mispredictedの次
+  // - pcが変更された次に来る命令を無効化したい:
+  //    + jumpの次
+  //    + 分岐したとき(branch次にpredictがtrueの時)
+  val clear_instruction: Bool = Wire(Bool())
+  when (
+       (io.branch_end && io.branch_mispredicted)
+    || (RegNext(decoder.io.ctrl.is_jump, false.B))
+    || (RegNext(decoder.io.ctrl.is_branch === predict, false.B))
+  ) {
     clear_instruction := true.B
   } .otherwise {
     clear_instruction := false.B
+  }
+
+  // 分岐命令の発行中は次の命令の発行を停止する
+  // Speculative execution beyond branchは一旦諦めよう……
+  val branch_pending: Bool = RegInit(false.B)
+  when (io.branch_end) {
+    branch_pending := false.B
+  } .otherwise {
+    branch_pending := decoder.io.ctrl.is_branch || branch_pending
   }
 
   // すべてのレジスタが準備できない時はhalt
@@ -55,14 +75,14 @@ class ID extends Module {
     (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
   )
 
-  val stall: Bool = !operands_available
+  val stall: Bool = !operands_available || branch_pending
+
   io.stall := RegNext(stall, false.B)
 
-  // stall時の命令は無効化
-  val ctrl: Ctrl = Mux(stall || clear_instruction,
-    0.U.asTypeOf(new Ctrl),
-    decoder.io.ctrl)
-  io.ctrl := RegNext(ctrl)
+  io.ctrl := RegNext(
+    Mux(stall || clear_instruction, 0.U.asTypeOf(new Ctrl), decoder.io.ctrl),
+    0.U.asTypeOf(new Ctrl)
+  )
 
   io.next_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
     io.if_out.inst_bits.imm9s, io.if_out.inst_bits.disp6s))
