@@ -27,7 +27,7 @@ class BusyBit extends Module {
     }
   }
 
-  // $0レジスタは常に0
-  busy_bit(0) := true.B
+  // $0レジスタは常に書き込み可能
+  busy_bit(0) := false.B
 }
 
