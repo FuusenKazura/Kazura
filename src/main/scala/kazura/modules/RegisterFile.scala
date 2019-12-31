@@ -19,9 +19,14 @@ class RFWrite extends Bundle {
 class RegisterFile extends Module {
   val io: RFIO = IO(new RFIO)
   val rf: Vec[UInt] = Reg(Vec(RF.NUM, UInt(LEN.W)))
-  for (i <- 0 until RF.READ_PORT) {
-    io.out(i) := rf(io.read_addr(i))
-    when (io.write(i).rf_w) {
+
+  for (l <- 0 until RF.READ_PORT) {
+    io.out(l) := rf(io.read_addr(l))
+  }
+
+  // chiselはマルチポートの書き込みに対応しているのか？
+  for (i <- 0 until RF.WRITE_PORT) {
+    when(io.write(i).rf_w) {
       rf(io.write(i).rd_addr) := io.write(i).data
     }
   }

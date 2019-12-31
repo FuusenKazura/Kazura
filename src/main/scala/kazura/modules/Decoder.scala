@@ -34,11 +34,14 @@ class Decoder extends Module {
     io.ctrl.is_branch := inst.is_branch
     io.ctrl.rf_w      := inst.rf_w
     io.ctrl.mem_w     := inst.mem_w
-    io.source_sel     := inst.source
+    for (i <- 0 until RF.READ_PORT) {
+      io.source_sel(i) := inst.source(i)
+    }
     io.ctrl.rs1_use    := inst.rs1_use
     io.ctrl.rs2_use    := inst.rs2_use
   }
 
+  conDecodeCell(Nop, io.inst_bits)
   insts.foldLeft(
     when(io.inst_bits.op === Nop.op) {
       conDecodeCell(Nop, io.inst_bits)

@@ -24,18 +24,17 @@ class ID extends Module {
   val io: IDIO = IO(new IDIO)
   // stallが起きていたら同じデータで再試行
   // MEMO: ID以前からくるデータの場合stallに影響され、再試行が必要
-  val if_out: IFOut = Mux(io.stall, RegNext(if_out), io.if_out)
+  // MEMO: 循環参照を解決するために必要
+  val if_out: IFOut = Wire(new IFOut)
+  val if_out_r: IFOut = RegNext(if_out)
+  if_out := Mux(io.stall, if_out_r, io.if_out)
   // stallが起きていたら同じデータで再試行
-  val predict: Bool = Mux(io.stall, RegNext(predict), io.predict)
+  val predict: Bool = Wire(Bool())
+  val predict_r: Bool = RegNext(predict)
+  predict := Mux(io.stall, predict_r, io.predict)
 
   // 書き込みデータはIDより後の話なのでstall関係なし
   val rf_write: Vec[RFWrite] = io.rf_write
-
-  val busy_bit: BusyBit = Module(new BusyBit)
-  busy_bit.io.release := rf_write
-  busy_bit.io.req_rs_addr(0) := if_out.inst_bits.rd
-  busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
-  busy_bit.io.req_rd_addr := if_out.inst_bits.rd
 
   val decoder: Decoder = Module(new Decoder)
   decoder.io.inst_bits := if_out.inst_bits
@@ -44,6 +43,13 @@ class ID extends Module {
   reg_file.io.read_addr(0) := if_out.inst_bits.rd
   reg_file.io.read_addr(1) := if_out.inst_bits.rs
   reg_file.io.write := rf_write
+
+  val busy_bit: BusyBit = Module(new BusyBit)
+  busy_bit.io.release := rf_write
+  busy_bit.io.req_rs_addr(0) := if_out.inst_bits.rd
+  busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
+  busy_bit.io.req_rd_w := decoder.io.ctrl.rf_w
+  busy_bit.io.req_rd_addr := if_out.inst_bits.rd
 
   // - mispredictedの次
   // - pcが変更された次に来る命令を無効化したい:
