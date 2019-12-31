@@ -18,7 +18,8 @@ class BusyBit extends Module {
   val busy_bit: Vec[Bool] = RegInit(VecInit(Seq.fill(RF.NUM)(false.B)))
 
   for(i <- 0 until RF.READ_PORT) {
-    io.rs_available(i) := !busy_bit(io.req_rs_addr(i))
+    io.rs_available(i) := (!busy_bit(io.req_rs_addr(i))).||(
+      io.release(0).rf_w && io.req_rs_addr(i) === io.release(0).rd_addr) // forwarding
   }
 
   for (i <- 0 until RF.WRITE_PORT; l <- 0 until RF.NUM) {

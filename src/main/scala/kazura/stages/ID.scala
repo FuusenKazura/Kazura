@@ -36,6 +36,8 @@ class ID extends Module {
   // 書き込みデータはIDより後の話なのでstall関係なし
   val rf_write: Vec[RFWrite] = io.rf_write
 
+  val stall: Bool = Wire(Bool())
+
   val decoder: Decoder = Module(new Decoder)
   decoder.io.inst_bits := if_out.inst_bits
 
@@ -48,7 +50,8 @@ class ID extends Module {
   busy_bit.io.release := rf_write
   busy_bit.io.req_rs_addr(0) := if_out.inst_bits.rd
   busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
-  busy_bit.io.req_rd_w := decoder.io.ctrl.rf_w
+  // stallする命令ではrdを確保しない
+  busy_bit.io.req_rd_w := !stall && decoder.io.ctrl.rf_w
   busy_bit.io.req_rd_addr := if_out.inst_bits.rd
 
   // - mispredictedの次
@@ -80,8 +83,7 @@ class ID extends Module {
     (busy_bit.io.rs_available(0) || !decoder.io.ctrl.rs1_use) &&
     (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
 
-  val stall: Bool = !operands_available || branch_pending
-  printf("cnt: %d, busy: %d, pending: %d\n", if_out.total_cnt, !operands_available, branch_pending)
+  stall := !operands_available || branch_pending
   io.stall := RegNext(stall, false.B)
 
   io.ctrl := RegNext(

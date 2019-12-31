@@ -15,11 +15,12 @@ class BusyBitUnitTest(m: ID) extends PeekPokeTester(m) {
     poke(m.io.if_out.inst_bits.rs, rs)
     poke(m.io.if_out.inst_bits.disp6u, disp6u)
   }
-  def writeData(data: Seq[Option[(Int, Int)]]): Unit = {
+  case class WriteData(rd: Int, data: Int)
+  def writeData(data: Seq[Option[WriteData]]): Unit = {
     for ((i, d) <- data.indices zip data) {
       poke(m.io.rf_write(i).rf_w, d.nonEmpty)
-      poke(m.io.rf_write(i).rd_addr, d.map(_._1).getOrElse(0))
-      poke(m.io.rf_write(i).data, d.map(_._2).getOrElse(0))
+      poke(m.io.rf_write(i).rd_addr, d.map(_.rd).getOrElse(0))
+      poke(m.io.rf_write(i).data, d.map(_.data).getOrElse(0))
     }
   }
 
@@ -41,8 +42,10 @@ class BusyBitUnitTest(m: ID) extends PeekPokeTester(m) {
   step(1)
   // queue: $0, $1
   expect(m.io.stall,true, "$1に依存しているのでstall")
-  // poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
-  // setInst(pc, total_cnt, Inst.Add, 1, 0, 0)
-  // writeData(Seq.fill(RF.WRITE_PORT)(None))
-  // step(0)
+  // この命令は無視される
+  poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
+  setInst(3, 3, Inst.Add, 5, 5, 0)
+  writeData(Seq(Some(WriteData(1, 1))))
+  step(1)
+  expect(m.io.stall,false, "$1に依存が解消されたのでstallしない")
 }
