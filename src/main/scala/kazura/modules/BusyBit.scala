@@ -21,14 +21,16 @@ class BusyBit extends Module {
     io.rs_available(i) := !busy_bit(io.req_rs_addr(i))
   }
 
-  for (i <- 0 until RF.WRITE_PORT) {
+  for (i <- 0 until RF.WRITE_PORT; l <- 0 until RF.NUM) {
     // releaseとreserveが同じbusy_bitに起こることは無いので安全
-    when (io.release(i).rf_w) {
+    when (io.release(i).rf_w && io.release(i).rd_addr === l.U) {
       busy_bit(io.release(i).rd_addr) := false.B
-    } .elsewhen (io.req_rd_w && i.U === io.req_rd_addr) {
+    } .elsewhen (io.req_rd_w && io.req_rd_addr === l.U) {
       busy_bit(io.req_rd_addr) := true.B
     }
   }
+  printf("req_rd_w: %d, req_rd_addr: %d\n", io.req_rd_w, io.req_rd_addr)
+  printf("busy_bit: "); for (i <- 0 until RF.NUM) printf("%d, ", busy_bit(i)); printf("\n")
 
   // $0レジスタは常に書き込み可能
   busy_bit(0) := false.B

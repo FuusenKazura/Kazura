@@ -76,13 +76,12 @@ class ID extends Module {
   }
 
   // すべてのレジスタが準備できない時はhalt
-  val operands_available: Bool = !(
+  val operands_available: Bool =
     (busy_bit.io.rs_available(0) || !decoder.io.ctrl.rs1_use) &&
     (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
-  )
 
   val stall: Bool = !operands_available || branch_pending
-
+  printf("cnt: %d, busy: %d, pending: %d\n", if_out.total_cnt, !operands_available, branch_pending)
   io.stall := RegNext(stall, false.B)
 
   io.ctrl := RegNext(
