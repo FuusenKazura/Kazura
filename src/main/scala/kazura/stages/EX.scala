@@ -13,7 +13,7 @@ class EXIO extends Bundle {
 
   val alu_out: UInt = Output(UInt(LEN.W))
   val alu_ctrl_out: Ctrl = Output(new Ctrl)
-  val alu_available: Vec[Bool] = Vec(1, Output(Bool))
+  val alu_available: Vec[Bool] = Vec(1, Output(Bool()))
 }
 
 class EX extends Module {

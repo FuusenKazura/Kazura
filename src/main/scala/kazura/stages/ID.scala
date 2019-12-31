@@ -7,9 +7,9 @@ import kazura.util.Params
 import kazura.util.Params._
 
 class IDIO extends Bundle {
-  val predict: Bool = Input(Bool())
-  val branch_end: Bool = Input(Bool())
-  val branch_mispredicted: Bool = Input(Bool())
+  val predict: Bool = Input(Bool()) // 分岐予測の予測
+  val branch_end: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
+  val branch_mispredicted: Bool = Input(Bool()) // 分岐予測の予測を失敗したか
 
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
@@ -87,14 +87,14 @@ class ID extends Module {
   io.next_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
     io.if_out.inst_bits.imm9s, io.if_out.inst_bits.disp6s))
 
-  io.source(0) := RegNext(MuxLookup(0.U, decoder.io.source_sel(0), Seq(
-    Source1.DISP6U -> if_out.inst_bits.disp6u,
-    Source1.RD -> reg_file.io.out(0),
-    Source1.ZERO -> 0.U
+  io.source(0) := RegNext(MuxLookup(decoder.io.source_sel(0), 0.U, Seq(
+    Source1.DISP6U.U -> if_out.inst_bits.disp6u,
+    Source1.RD.U -> reg_file.io.out(0),
+    Source1.ZERO.U -> 0.U
   )))
-  io.source(1) := RegNext(MuxLookup(0.U, decoder.io.source_sel(1), Seq(
-    Source2.IMM9S -> if_out.inst_bits.imm9s,
-    Source2.RS -> reg_file.io.out(1),
-    Source2.ONE -> 1.U
+  io.source(1) := RegNext(MuxLookup(decoder.io.source_sel(1), 0.U, Seq(
+    Source2.IMM9S.U -> if_out.inst_bits.imm9s,
+    Source2.RS.U -> reg_file.io.out(1),
+    Source2.ONE.U -> 1.U
   )))
 }

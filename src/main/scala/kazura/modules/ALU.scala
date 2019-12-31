@@ -15,13 +15,13 @@ class ALUIO extends Bundle {
 
 class ALU extends Module {
   val io: ALUIO = IO(new ALUIO)
-  io.alu_out := RegNext(MuxLookup(0, io.ctrl.alu_op, Seq(
-    ALUOP.ADD -> io.source(0).+(io.source(1)),
-    ALUOP.SUB -> io.source(0).-(io.source(1)),
-    ALUOP.AND -> io.source(0).&(io.source(1)),
-    ALUOP.OR  -> io.source(0).|(io.source(1)),
-    ALUOP.EQ  -> io.source(0).===(io.source(1)),
-    ALUOP.GT  -> io.source(0).>(io.source(1)),
+  io.alu_out := RegNext(MuxLookup(io.ctrl.alu_op, 0.U, Seq(
+    ALUOP.ADD.U -> io.source(0).+(io.source(1)),
+    ALUOP.SUB.U -> io.source(0).-(io.source(1)),
+    ALUOP.AND.U -> io.source(0).&(io.source(1)),
+    ALUOP.OR.U  -> io.source(0).|(io.source(1)),
+    ALUOP.EQ.U  -> io.source(0).===(io.source(1)),
+    ALUOP.GT.U  -> io.source(0).>(io.source(1))
   )))
   io.alu_ctrl_out := RegNext(io.ctrl, 0.U.asTypeOf(new Ctrl))
 }
