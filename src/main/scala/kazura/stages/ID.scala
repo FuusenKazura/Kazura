@@ -53,7 +53,7 @@ class ID extends Module {
   when (
        (io.branch_end && io.branch_mispredicted)
     || (RegNext(decoder.io.ctrl.is_jump, false.B))
-    || (RegNext(decoder.io.ctrl.is_branch === predict, false.B))
+    || (RegNext(decoder.io.ctrl.is_branch && predict, false.B))
   ) {
     clear_instruction := true.B
   } .otherwise {
