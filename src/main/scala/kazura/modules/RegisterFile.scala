@@ -1,6 +1,7 @@
 package kazura.modules
 
 import chisel3._
+import chisel3.util.experimental.BoringUtils
 import kazura.util.Params._
 import kazura.models.InstBits
 

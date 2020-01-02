@@ -6,7 +6,7 @@ import chisel3.iotesters._
 import kazura.models.Inst
 import kazura.models.InstBits
 
-class BusyBitUnitTest(m: ID) extends PeekPokeTester(m) {
+abstract class IDUnitTestHelper(m: ID) extends PeekPokeTester(m) {
   def setInst[I <: Inst.Inst](total_cnt: Int, pc: Int, inst: I, rd: Int, rs: Int, disp6u: Int): Unit = {
     poke(m.io.if_out.total_cnt, total_cnt)
     poke(m.io.if_out.pc, pc)
@@ -23,7 +23,9 @@ class BusyBitUnitTest(m: ID) extends PeekPokeTester(m) {
       poke(m.io.rf_write(i).data, d.map(_.data).getOrElse(0))
     }
   }
+}
 
+class BusyBitUnitTest(m: ID) extends IDUnitTestHelper(m) {
   poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
   setInst(0, 0, Inst.Add, 0, 0, 0)
   writeData(Seq.fill(RF.WRITE_PORT)(None))
@@ -45,7 +47,25 @@ class BusyBitUnitTest(m: ID) extends PeekPokeTester(m) {
   // この命令は無視される
   poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
   setInst(3, 3, Inst.Add, 5, 5, 0)
-  writeData(Seq(Some(WriteData(1, 1))))
+  writeData(Seq(Some(WriteData(1, 1))) ++ Seq.fill(RF.WRITE_PORT - 1)(None))
   step(1)
+  // queue: $0
   expect(m.io.stall,false, "$1に依存が解消されたのでstallしない")
+}
+
+class RFUnitTester(m: ID) extends IDUnitTestHelper(m) {
+  for (i <- 0 until RF.NUM by RF.WRITE_PORT) {
+    poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
+    setInst(i, i, Inst.Nop, 0, 0, 0)
+    (0 until RF.WRITE_PORT).foreach(x => println(s"${i+x} <- ${i+x}"))
+    writeData((0 until RF.WRITE_PORT).map(x => Some(WriteData(i+x, i+x))))
+    step(1)
+  }
+  for (i <- 0 until RF.NUM) {
+    poke(m.io.predict, false); poke(m.io.branch_end, false); poke(m.io.branch_mispredicted, false)
+    setInst(i, i, Inst.Add, i, i, 0)
+    writeData(Seq.fill(RF.WRITE_PORT)(None))
+    step(1)
+    expect(m.io.source(0), i, s"rf(${i}) != i (書き込んだ値と読み出された値が違う)")
+  }
 }

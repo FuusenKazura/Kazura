@@ -3,7 +3,7 @@ import chisel3.iotesters._
 import kazura.{modules => M}
 import kazura.{stages => S}
 import modules.FetchUnitTester
-import stages.BusyBitUnitTest
+import stages.{BusyBitUnitTest, RFUnitTester}
 
 class Tester extends ChiselFlatSpec {
   // private val backendNames = Array("firrtl", "verilator")
@@ -19,6 +19,11 @@ class Tester extends ChiselFlatSpec {
     "ID" should s"stall function unit test (with $backendName)" in {
       Driver(() => new S.ID, backendName) {
         c: S.ID => new BusyBitUnitTest(c)
+      } should be (true)
+    }
+    "ID" should s"RF function unit test (with $backendName)" in {
+      Driver(() => new S.ID, backendName) {
+        c: S.ID => new RFUnitTester(c)
       } should be (true)
     }
   }

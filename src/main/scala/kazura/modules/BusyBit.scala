@@ -32,8 +32,8 @@ class BusyBit extends Module {
       busy_bit(io.req_rd_addr) := true.B
     }
   }
-  printf("req_rd_w: %d, req_rd_addr: %d\n", io.req_rd_w, io.req_rd_addr)
-  printf("busy_bit: "); for (i <- 0 until RF.NUM) printf("%d, ", busy_bit(i)); printf("\n")
+  // printf("req_rd_w: %d, req_rd_addr: %d\n", io.req_rd_w, io.req_rd_addr)
+  // printf("busy_bit: "); for (i <- 0 until RF.NUM) printf("%d, ", busy_bit(i)); printf("\n")
 
   // $0レジスタは常に書き込み可能
   busy_bit(0) := false.B
