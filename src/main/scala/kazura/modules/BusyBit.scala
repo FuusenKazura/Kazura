@@ -1,6 +1,7 @@
 package kazura.modules
 
 import chisel3._
+import chisel3.util._
 import kazura.util.Params._
 
 // 要求しているレジスタが使用中か確認: WAW, RAW, WARを防ぐ
@@ -18,8 +19,9 @@ class BusyBit extends Module {
   val busy_bit: Vec[Bool] = RegInit(VecInit(Seq.fill(RF.NUM)(false.B)))
 
   for(i <- 0 until RF.READ_PORT) {
-    io.rs_available(i) := (!busy_bit(io.req_rs_addr(i))).||(
-      io.release(0).rf_w && io.req_rs_addr(i) === io.release(0).rd_addr) // forwarding
+    // forwarding
+    val look_forward = io.release.forall((r: RFWrite) => r.rf_w && r.rd_addr === io.req_rs_addr(i)) // forwarding
+    io.rs_available(i) := !busy_bit(io.req_rs_addr(i)) || look_forward
   }
 
   for (i <- 0 until RF.WRITE_PORT; l <- 0 until RF.NUM) {
