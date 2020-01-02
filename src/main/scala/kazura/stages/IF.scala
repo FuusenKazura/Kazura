@@ -9,6 +9,12 @@ object Main extends App {
   Driver.execute(args, () => new Fetch)
 }
 class IFIn extends Bundle {
+  val predict: Bool = Bool() // 分岐予測の予測
+  val predict_enable: Bool = Bool()
+  val predict_pc: UInt = UInt(LEN.W)
+  val branch_mispredicted: Bool = Bool() // 分岐予測の予測を失敗したか
+  val branch_mispredicted_enable: Bool = Bool() // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
+
   val is_branch: Bool = Bool()
   val is_jump: Bool = Bool()
   val alu_out: UInt = UInt(LEN.W)

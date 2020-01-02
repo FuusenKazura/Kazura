@@ -8,8 +8,8 @@ import kazura.util.Params._
 
 class IDIO extends Bundle {
   val predict: Bool = Input(Bool()) // 分岐予測の予測
-  val branch_end: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
   val branch_mispredicted: Bool = Input(Bool()) // 分岐予測の予測を失敗したか
+  val branch_mispredicted_enable: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
 
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
@@ -60,7 +60,7 @@ class ID extends Module {
   //    + 分岐したとき(branch次にpredictがtrueの時)
   val clear_instruction: Bool = Wire(Bool())
   when (
-       (io.branch_end && io.branch_mispredicted)
+       (io.branch_mispredicted_enable && io.branch_mispredicted)
     || (RegNext(decoder.io.ctrl.is_jump, false.B))
     || (RegNext(decoder.io.ctrl.is_branch && predict, false.B))
   ) {
@@ -72,7 +72,7 @@ class ID extends Module {
   // 分岐命令の発行中は次の命令の発行を停止する
   // Speculative execution beyond branchは一旦諦めよう……
   val branch_pending: Bool = RegInit(false.B)
-  when (io.branch_end) {
+  when (io.branch_mispredicted_enable) {
     branch_pending := false.B
   } .otherwise {
     branch_pending := decoder.io.ctrl.is_branch || branch_pending
