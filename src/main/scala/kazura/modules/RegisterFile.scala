@@ -21,7 +21,11 @@ class RegisterFile extends Module {
   val rf: Vec[UInt] = Reg(Vec(RF.NUM, UInt(LEN.W)))
 
   for (l <- 0 until RF.READ_PORT) {
-    io.out(l) := rf(io.read_addr(l))
+    // forwarding
+    val look_forward: RFWrite = io.write.reduceTree((r1: RFWrite, r2: RFWrite) =>
+      Mux(r1.rf_w && r1.rd_addr === io.read_addr(l), r1, r2))
+    io.out(l) := Mux(look_forward.rf_w && look_forward.rd_addr === io.read_addr(l),
+      look_forward.data, rf(io.read_addr(l)))
   }
 
   // chiselはマルチポートの書き込みに対応しているのか？
