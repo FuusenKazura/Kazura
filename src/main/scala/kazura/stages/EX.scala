@@ -6,14 +6,13 @@ import kazura.util.Params._
 import kazura.modules.{ALU, Ctrl}
 
 class EXIO extends Bundle {
-  val alu_op: UInt = Input(UInt(ALUOP.NUM_W.W))
   // val source_dest: UInt = Input(UInt(1.W)) // 当面無視、マルチALU時に使用
   val ctrl: Ctrl = Input(new Ctrl)
   val source: Vec[UInt] = Input(Vec(RF.READ_PORT, UInt(LEN.W)))
 
   val alu_out: UInt = Output(UInt(LEN.W))
   val alu_ctrl_out: Ctrl = Output(new Ctrl)
-  val alu_available: Vec[Bool] = Vec(1, Output(Bool()))
+  // val alu_available: Vec[Bool] = Vec(1, Output(Bool())) // 当面無視、マルチALU時に使用
 }
 
 class EX extends Module {
@@ -25,5 +24,5 @@ class EX extends Module {
   alu.io.source_enable := true.B
   io.alu_out := alu.io.alu_out
   io.alu_ctrl_out := alu.io.alu_ctrl_out
-  io.alu_available := Wire(VecInit(true.B))
+  // io.alu_available := Wire(VecInit(true.B))
 }

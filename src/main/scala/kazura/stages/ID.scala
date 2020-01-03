@@ -14,7 +14,7 @@ class IDIO extends Bundle {
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
 
-  val next_pc: UInt = Output(UInt(LEN.W))
+  val predict_pc: UInt = Output(UInt(LEN.W))
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
   val stall: Bool = Output(Bool())
@@ -91,7 +91,7 @@ class ID extends Module {
     0.U.asTypeOf(new Ctrl)
   )
 
-  io.next_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
+  io.predict_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
     io.if_out.inst_bits.imm9s, io.if_out.inst_bits.disp6s))
 
   io.source(0) := RegNext(MuxLookup(decoder.io.source_sel(0), 0.U, Seq(
