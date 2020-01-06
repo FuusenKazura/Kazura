@@ -47,16 +47,11 @@ object SimpleUnitTest {
     "b1001_100_000000000".U,  // 3: $4 = 0
     "b0101_001_000000001".U,  // 4: $1 += 1
     "b0001_010_001_000000".U, // 5: $2 += $1
-    "b1100_001_011_000010".U, // 6: if($1 == $3) pc+= 2
-    "h0000".U,
-    "h0000".U,
-    "h0000".U,
-    "h0000".U,
-    "h0000".U,
-    "h0000".U,
-    "b1110_000_111110111".U,  // 7: pc = pc - 3 (- 6)
-    "b0001_100_010_000000".U  // 8: $4 += $2
-  ) ++ Seq.fill(100)("h0000".U) // ans: $4 == (0 until 10).sum
+    "b1100_001_011_000011".U, // 6: if($1 == $3) pc+= 3
+    "h0000".U,                // 7: NOP
+    "b1110_000_111111100".U,  // 8: pc = pc - 3 - 1
+    "b0001_100_010_000000".U  // 9: $4 += $2
+  ) ++ Seq.fill(100)("h0000".U) // ans: $4 == (0 to 10).sum
 
   // (0 to 10).sum
   val sumBgtUnitTest: Seq[UInt] = Seq(
@@ -66,10 +61,11 @@ object SimpleUnitTest {
     "b1001_100_000000000".U,  // 3: $4 = 0
     "b0101_001_000000001".U,  // 4: $1 += 1
     "b0001_010_001_000000".U, // 5: $2 += $1
-    "b1101_001_011_000010".U, // 6: if($1 > $3) pc+= 2
-    "b1110_000_111111101".U,  // 7: pc = pc - 3
+    "b1101_001_011_000011".U, // 6: if($1 > $3) pc+= 3
+    "h0000".U,                // 7: NOP
+    "b1110_000_111111100".U,  // 7: pc = pc - 3 - 1
     "b0001_100_010_000000".U  // 8: $4 += $2
-  ) ++ Seq.fill(100)("h0000".U) // ans: $4 == (0 until 10).sum
+  ) ++ Seq.fill(100)("h0000".U) // ans: $4 == (0 to 10).sum
 }
 
 class SimpleAddUnitTester(m: Hart) extends PeekPokeTester(m) {
@@ -94,8 +90,8 @@ class SimpleBgtUnitTester(m: Hart) extends PeekPokeTester(m) {
 }
 
 class SumUnitTester(m: Hart) extends PeekPokeTester(m) {
-  step(1000)
-  expect(m.io.rf(4), (0 until 10).sum)
+  step(100)
+  expect(m.io.rf(4), (0 to 10).sum)
 }
 
 

@@ -59,10 +59,10 @@ class Tester extends ChiselFlatSpec {
         c: Hart => new SumUnitTester(c)
       } should be (true)
     }
-    // "Hart" should s"Sum Bgt Loop unit test (with $backendName)" in {
-    //   Driver(() => new Hart(SimpleUnitTest.sumBgtUnitTest), backendName) {
-    //     c: Hart => new SumUnitTester(c)
-    //   } should be (true)
-    // }
+    "Hart" should s"Sum Bgt Loop unit test (with $backendName)" in {
+      Driver(() => new Hart(SimpleUnitTest.sumBgtUnitTest), backendName) {
+        c: Hart => new SumUnitTester(c)
+      } should be (true)
+    }
   }
 }
