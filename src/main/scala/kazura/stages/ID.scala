@@ -55,14 +55,15 @@ class ID extends Module {
   busy_bit.io.req_rs_addr(0) := if_out.inst_bits.rd
   busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
   // stallする命令ではrdを確保しない
-  busy_bit.io.req_rd_w := !stall && decoder.io.ctrl.rf_w
+  val clear_instruction: Bool = Wire(Bool())
+  busy_bit.io.req_rd_w := !clear_instruction && !stall && decoder.io.ctrl.rf_w
   busy_bit.io.req_rd_addr := if_out.inst_bits.rd
 
+  // # clear_instruction
   // - mispredictedの次
   // - pcが変更された次に来る命令を無効化したい:
   //    + jumpの次
   //    + 分岐したとき(branch次にpredictがtrueの時)
-  val clear_instruction: Bool = Wire(Bool())
   when (
        (io.branch_graduated && io.branch_mispredicted)
     || (RegNext(decoder.io.ctrl.is_jump, false.B))

@@ -94,7 +94,7 @@ class SimpleBgtUnitTester(m: Hart) extends PeekPokeTester(m) {
 }
 
 class SumUnitTester(m: Hart) extends PeekPokeTester(m) {
-  step(200)
+  step(1000)
   expect(m.io.rf(4), (0 until 10).sum)
 }
 

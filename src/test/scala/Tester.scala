@@ -7,8 +7,8 @@ import stages.{BusyBitUnitTest, RFUnitTester}
 
 class Tester extends ChiselFlatSpec {
   // private val backendNames = Array("firrtl", "verilator")
-  // private val backendNames = Array("firrtl")
-  private val backendNames = Array("verilator")
+  private val backendNames = Array("firrtl")
+  // private val backendNames = Array("verilator")
 
   for ( backendName <- backendNames ) {
     // behavior of "modules"
