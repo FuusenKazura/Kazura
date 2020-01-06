@@ -3,21 +3,23 @@ package kazura.stages
 import chisel3._
 import chisel3.util.MuxLookup
 import kazura.modules.{BusyBit, Ctrl, Decoder, RFWrite, RegisterFile}
-import kazura.util.Params
 import kazura.util.Params._
+import kazura.models.Inst
 
 class IDIO extends Bundle {
   val predict: Bool = Input(Bool()) // 分岐予測の予測
   val branch_mispredicted: Bool = Input(Bool()) // 分岐予測の予測を失敗したか
-  val branch_mispredicted_enable: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
+  val branch_graduated: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
 
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
 
-  val predict_pc: UInt = Output(UInt(LEN.W))
+  val next_pc: UInt = Output(UInt(LEN.W))
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
   val stall: Bool = Output(Bool())
+
+  val rf4debug: Vec[UInt] = Vec(RF.NUM, Output(UInt(LEN.W)))
 }
 
 class ID extends Module {
@@ -47,6 +49,8 @@ class ID extends Module {
   reg_file.io.write := rf_write
 
   val busy_bit: BusyBit = Module(new BusyBit)
+  busy_bit.io.branch_mispredicted := io.branch_mispredicted
+  busy_bit.io.branch_graduated := io.branch_graduated
   busy_bit.io.release := rf_write
   busy_bit.io.req_rs_addr(0) := if_out.inst_bits.rd
   busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
@@ -60,7 +64,7 @@ class ID extends Module {
   //    + 分岐したとき(branch次にpredictがtrueの時)
   val clear_instruction: Bool = Wire(Bool())
   when (
-       (io.branch_mispredicted_enable && io.branch_mispredicted)
+       (io.branch_graduated && io.branch_mispredicted)
     || (RegNext(decoder.io.ctrl.is_jump, false.B))
     || (RegNext(decoder.io.ctrl.is_branch && predict, false.B))
   ) {
@@ -71,12 +75,11 @@ class ID extends Module {
 
   // 分岐命令の発行中は次の命令の発行を停止する
   // Speculative execution beyond branchは一旦諦めよう……
+  // TODO: このロジックバグってる(連続でbranchが来る場合)
   val branch_pending: Bool = RegInit(false.B)
-  when (io.branch_mispredicted_enable) {
-    branch_pending := false.B
-  } .otherwise {
-    branch_pending := decoder.io.ctrl.is_branch || branch_pending
-  }
+  branch_pending := Mux(io.branch_graduated,
+    false.B,
+    (!stall && decoder.io.ctrl.is_branch) || branch_pending)
 
   // すべてのレジスタが準備できない時はhalt
   val operands_available: Bool =
@@ -84,15 +87,18 @@ class ID extends Module {
     (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
 
   stall := !operands_available || branch_pending
-  io.stall := RegNext(stall, false.B)
+  io.stall := RegNext(
+    !(io.branch_graduated && io.branch_mispredicted) // 分岐予測に失敗した場合、状態をリセット
+      && stall,
+    false.B)
 
   io.ctrl := RegNext(
-    Mux(stall || clear_instruction, 0.U.asTypeOf(new Ctrl), decoder.io.ctrl),
-    0.U.asTypeOf(new Ctrl)
+    Mux(stall || clear_instruction, Inst.nop, decoder.io.ctrl),
+    Inst.nop
   )
 
-  io.predict_pc := RegNext(io.if_out.pc + Mux(decoder.io.ctrl.is_jump,
-    io.if_out.inst_bits.imm9s, io.if_out.inst_bits.disp6s))
+  io.next_pc := RegNext(Mux(decoder.io.ctrl.is_jump,
+    if_out.pc + if_out.inst_bits.imm9s, if_out.pc + if_out.inst_bits.disp6s))
 
   io.source(0) := RegNext(MuxLookup(decoder.io.source_sel(0), 0.U, Seq(
     Source1.DISP6U.U -> if_out.inst_bits.disp6u,
@@ -104,4 +110,14 @@ class ID extends Module {
     Source2.RS.U -> reg_file.io.out(1),
     Source2.ONE.U -> 1.U
   )))
+  // printf("cnt: %d, pc: %d, op: %d\n", if_out.total_cnt, if_out.pc, if_out.inst_bits.op)
+  printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
+  printf("stall: %d, !operands_avail: %d, branch_pend: %d\n", stall, !operands_available, branch_pending)
+  // printf("alu_op: %d\n", decoder.io.ctrl.alu_op)
+  printf("source(0): %d\n", io.source(0))
+  printf("source(1): %d\n", io.source(1))
+  printf("next_addr: %d\n", io.next_pc)
+  printf("----------\n")
+
+  io.rf4debug := reg_file.io.rf4debug
 }

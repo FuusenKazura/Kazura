@@ -14,9 +14,11 @@ class IFIn extends Bundle {
   val predict_pc: UInt = UInt(LEN.W)
   val branch_mispredicted: Bool = Bool() // 分岐予測の予測を失敗したか
   val branch_mispredicted_enable: Bool = Bool() // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
+  val restoration_pc: UInt = UInt(LEN.W)
 
   val is_branch: Bool = Bool()
   val is_jump: Bool = Bool()
+  val jump_pc: UInt = UInt(LEN.W)
   val alu_out: UInt = UInt(LEN.W)
   val stall: Bool = Bool()
 }
@@ -35,16 +37,27 @@ class IF(val im: Seq[UInt] = (0 until 256).map(_.U)) extends Module {
   val inst_mem: Vec[UInt] = RegInit(VecInit(im))
   val pc: UInt = RegInit(0.U(LEN.W))
   val total_cnt: UInt = RegInit(0.U(LEN.W))
+  total_cnt := total_cnt + 1.U(LEN.W)
 
   val fetch: Fetch = Module(new Fetch)
+  fetch.io.in.predict := io.in.predict
+  fetch.io.in.predict_enable := io.in.predict_enable
+  fetch.io.in.predict_pc := io.in.predict_pc
+  fetch.io.in.branch_mispredicted := io.in.branch_mispredicted
+  fetch.io.in.branch_graduated := io.in.branch_mispredicted_enable
+  fetch.io.in.restoration_pc := io.in.restoration_pc
+
+  fetch.io.in.is_branch := io.in.is_branch
+  fetch.io.in.is_jump := io.in.is_jump
+  fetch.io.in.jump_pc := io.in.jump_pc
+  fetch.io.in.alu_out := io.in.alu_out
+  fetch.io.in.stall := io.in.stall
+
   fetch.io.in.prev_pc := pc
-  fetch.io.in.prev_total_cnt := total_cnt
-  fetch.io.in <> io.in
 
   pc := fetch.io.out.pc
-  total_cnt := fetch.io.out.total_cnt
 
   io.out.pc := pc
   io.out.total_cnt := total_cnt
-  io.out.inst_bits := inst_mem(pc)
+  io.out.inst_bits := inst_mem(pc).asTypeOf(new InstBits)
 }

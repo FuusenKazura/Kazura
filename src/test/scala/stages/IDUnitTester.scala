@@ -28,26 +28,26 @@ abstract class IDUnitTestHelper(m: ID) extends PeekPokeTester(m) {
 }
 
 class BusyBitUnitTest(m: ID) extends IDUnitTestHelper(m) {
-  poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+  poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
   setInst(0, 0, Inst.Add, 0, 0, 0)
   writeData(Seq.fill(RF.WRITE_PORT)(None))
   step(1)
   // queue: $0
   expect(m.io.stall, false, "依存が存在しないので、stallしない")
-  poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+  poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
   setInst(1, 1, Inst.Add, 1, 0, 0)
   writeData(Seq.fill(RF.WRITE_PORT)(None))
   step(1)
   // queue: $0, $1
   expect(m.io.stall, false, "$0は特例でstallしない(常に0な為)")
-  poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+  poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
   setInst(2, 2, Inst.Add, 2, 1, 0)
   writeData(Seq.fill(RF.WRITE_PORT)(None))
   step(1)
   // queue: $0, $1
   expect(m.io.stall,true, "$1に依存しているのでstall")
   // この命令は無視される
-  poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+  poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
   setInst(3, 3, Inst.Add, 5, 5, 0)
   writeData(Seq(Some(WriteData(1, 1))) ++ Seq.fill(RF.WRITE_PORT - 1)(None))
   step(1)
@@ -57,14 +57,14 @@ class BusyBitUnitTest(m: ID) extends IDUnitTestHelper(m) {
 
 class RFUnitTester(m: ID) extends IDUnitTestHelper(m) {
   for (i <- 0 until RF.NUM by RF.WRITE_PORT) {
-    poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+    poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
     setInst(i, i, Inst.Nop, 0, 0, 0)
     (0 until RF.WRITE_PORT).foreach(x => println(s"${i+x} <- ${i+x}"))
     writeData((0 until RF.WRITE_PORT).map(x => Some(WriteData(i+x, i+x))))
     step(1)
   }
   for (i <- 0 until RF.NUM) {
-    poke(m.io.predict, false); poke(m.io.branch_mispredicted_enable, false); poke(m.io.branch_mispredicted, false)
+    poke(m.io.predict, false); poke(m.io.branch_graduated, false); poke(m.io.branch_mispredicted, false)
     setInst(i, i, Inst.Add, i, i, 0)
     writeData(Seq.fill(RF.WRITE_PORT)(None))
     step(1)
