@@ -76,7 +76,7 @@ class ID extends Module {
 
   // 分岐命令の発行中は次の命令の発行を停止する
   // Speculative execution beyond branchは一旦諦めよう……
-  // TODO: このロジックバグってる(連続でbranchが来る場合)
+  // TODO: このロジックバグってる(連続でbranchが来る場合), branch後にjumpが来るパターンもバグ発生
   val branch_pending: Bool = RegInit(false.B)
   branch_pending := Mux(io.branch_graduated,
     false.B,

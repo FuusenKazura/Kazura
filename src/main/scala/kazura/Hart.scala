@@ -7,8 +7,21 @@ import kazura.util.Params._
 import kazura.stages._
 
 object Main {
+  val prog = Seq(
+    "b1001_001_000000000".U,  // 0: $1 = 0
+    "b1001_010_000000000".U,  // 1: $2 = 0
+    "b1001_011_000001001".U,  // 2: $3 = 9
+    "b1001_100_000000000".U,  // 3: $4 = 0
+    "b0101_001_000000001".U,  // 4: $1 += 1
+    "b0001_010_001_000000".U, // 5: $2 += $1
+    "b1101_001_011_000011".U, // 6: if($1 > $3) pc+= 3
+    "h0000".U,                // 7: NOP
+    "b1110_000_111111100".U,  // 7: pc = pc - 3 - 1
+    "b0001_100_010_000000".U  // 8: $4 += $2
+  )
   def main(args: Array[String]): Unit = {
-    chisel3.Driver.execute(args, () => new Hart(Seq()))
+    chisel3.Driver.execute(args, () => new Hart(
+      prog ++ Seq.fill(32 - prog.length)("h0000".U)))
   }
 }
 

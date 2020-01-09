@@ -5,9 +5,6 @@ import kazura.models.InstBits
 import kazura.modules._
 import kazura.util.Params._
 
-object Main extends App {
-  Driver.execute(args, () => new Fetch)
-}
 class IFIn extends Bundle {
   val predict: Bool = Bool() // 分岐予測の予測
   val predict_enable: Bool = Bool()
