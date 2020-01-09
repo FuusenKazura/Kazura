@@ -23,7 +23,7 @@ class BusyBit extends Module {
 
   for(i <- 0 until RF.READ_PORT) {
     // forwarding
-    val look_forward = io.release.forall((r: RFWrite) => r.rf_w && r.rd_addr === io.req_rs_addr(i)) // forwarding
+    val look_forward = io.release.exists((r: RFWrite) => r.rf_w && r.rd_addr === io.req_rs_addr(i)) // forwarding
     io.rs_available(i) := !busy_bit(io.req_rs_addr(i)) || look_forward
   }
 

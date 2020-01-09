@@ -10,7 +10,7 @@ object Params {
     val NUM = 8
     val NUM_W = log2Ceil(NUM)
 
-    val WRITE_PORT = 1
+    val WRITE_PORT = 2
     val READ_PORT = 2
   }
   object Source1 {

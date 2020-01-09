@@ -17,6 +17,7 @@ class IDIO extends Bundle {
   val next_pc: UInt = Output(UInt(LEN.W))
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
+  val rd: UInt = Output(UInt(LEN.W))
   val stall: Bool = Output(Bool())
 
   val rf4debug: Vec[UInt] = Vec(RF.NUM, Output(UInt(LEN.W)))
@@ -111,6 +112,7 @@ class ID extends Module {
     Source2.RS.U -> reg_file.io.out(1),
     Source2.ONE.U -> 1.U
   )))
+  io.rd := reg_file.io.out(0)
   // printf("cnt: %d, pc: %d, op: %d\n", if_out.total_cnt, if_out.pc, if_out.inst_bits.op)
   printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
   printf("stall: %d, !operands_avail: %d, branch_pend: %d\n", stall, !operands_available, branch_pending)

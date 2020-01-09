@@ -7,14 +7,14 @@ import kazura.util.Params._
 
 class IMIO extends Bundle {
   val rd_addr: UInt = Input(UInt(log2Ceil(RF.NUM).W))
-  val read: ValidIO[UInt] = Input(ValidIO(UInt(log2Ceil(LEN).W)))
-  val write: ValidIO[WithAddr] = Input(ValidIO(new WithAddr(log2Ceil(MEM.NUM).W)))
-  val out: ValidIO[WithAddr] = Output(ValidIO(new WithAddr(RF.NUM_W.W)))
+  val read: Valid[UInt] = Input(Valid(UInt(log2Ceil(LEN).W)))
+  val write: Valid[WithAddr] = Input(Valid(new WithAddr(log2Ceil(MEM.NUM).W)))
+  val out: Valid[WithAddr]  = Output(Valid(new WithAddr(RF.NUM_W.W)))
 }
 
-class IM(mem_size: Int) extends Module {
+class IM extends Module {
   val io: IMIO = IO(new IMIO)
-  val mem: SyncReadMem[UInt] = SyncReadMem(mem_size, UInt(LEN.W))
+  val mem: SyncReadMem[UInt] = SyncReadMem(MEM.NUM, UInt(LEN.W))
 
   io.out.valid := io.read.valid
   io.out.bits.addr := io.rd_addr
