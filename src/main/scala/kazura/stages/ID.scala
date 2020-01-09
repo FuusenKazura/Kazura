@@ -14,6 +14,7 @@ class IDIO extends Bundle {
   val if_out: IFOut = Input(new IFOut)
   val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
 
+  val jump_pc: UInt = Output(UInt(LEN.W))
   val next_pc: UInt = Output(UInt(LEN.W))
   val ctrl: Ctrl = Output(new Ctrl)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
@@ -68,7 +69,7 @@ class ID extends Module {
   when (
        (io.branch_graduated && io.branch_mispredicted)
     || (RegNext(decoder.io.ctrl.is_jump, false.B))
-    || (RegNext(decoder.io.ctrl.is_branch && predict, false.B))
+    || (RegNext(decoder.io.ctrl.is_branch, false.B) && predict)
   ) {
     clear_instruction := true.B
   } .otherwise {
@@ -99,8 +100,10 @@ class ID extends Module {
     Inst.nop
   )
 
-  io.next_pc := RegNext(Mux(decoder.io.ctrl.is_jump,
+  io.jump_pc := RegNext(Mux(decoder.io.ctrl.is_jump,
     if_out.pc + if_out.inst_bits.imm9s, if_out.pc + if_out.inst_bits.disp6s))
+
+  io.next_pc := RegNext(if_out.pc + 1.U)
 
   io.source(0) := RegNext(MuxLookup(decoder.io.source_sel(0), 0.U, Seq(
     Source1.DISP6U.U -> if_out.inst_bits.disp6u,
@@ -119,7 +122,7 @@ class ID extends Module {
   // printf("alu_op: %d\n", decoder.io.ctrl.alu_op)
   printf("source(0): %d\n", io.source(0))
   printf("source(1): %d\n", io.source(1))
-  printf("next_addr: %d\n", io.next_pc)
+  printf("next_addr: %d\n", io.jump_pc)
   printf("----------\n")
 
   io.rf4debug := reg_file.io.rf4debug

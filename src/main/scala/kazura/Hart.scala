@@ -41,17 +41,16 @@ class Hart(val im: Seq[UInt]) extends Module {
   // --------------------
   // IF
   s_if.io.in.predict := false.B
-  s_if.io.in.predict_enable := false.B
-  s_if.io.in.predict_pc := "hFFFF".U
-  // 分岐予測が失敗する条件は分岐条件がtrueの場合
+  s_if.io.in.predict_enable := s_id.io.ctrl.is_branch
+  s_if.io.in.predict_pc := s_id.io.jump_pc
+
+  // 今積んでいる分岐予測が予測を失敗する条件は分岐条件がtrueの場合
   s_if.io.in.branch_mispredicted := s_ex.io.alu_out =/= 0.U
-  s_if.io.in.branch_mispredicted_enable := s_ex.io.alu_ctrl_out.is_branch
+  s_if.io.in.branch_graduated := s_ex.io.alu_ctrl_out.is_branch
   s_if.io.in.restoration_pc := s_ex.io.restoration_pc_out
 
-  s_if.io.in.is_branch := s_ex.io.alu_ctrl_out.is_branch
   s_if.io.in.is_jump := s_id.io.ctrl.is_jump
-  s_if.io.in.jump_pc := s_id.io.next_pc
-  s_if.io.in.alu_out := s_ex.io.alu_out
+  s_if.io.in.jump_pc := s_id.io.jump_pc
 
   s_if.io.in.stall := s_id.io.stall
 
@@ -71,7 +70,9 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_ex.io.ctrl := s_id.io.ctrl
   s_ex.io.source := s_id.io.source
   s_ex.io.rd := s_id.io.rd
-  s_ex.io.restoration_pc := s_id.io.next_pc // BPが常にfalseなので
+  s_ex.io.restoration_pc := Mux(false.B, // BPが常にfalseなので
+    s_id.io.next_pc, // 分岐しなければ到達していた次のPC
+    s_id.io.jump_pc )
 
   // --------------------
   // IM
