@@ -18,6 +18,7 @@ class Ctrl extends Bundle {
   val is_jump: Bool = Bool()
   val is_branch: Bool = Bool()
   val rf_w: Bool = Bool()
+  val mem_r: Bool = Bool()
   val mem_w: Bool = Bool()
   val rs1_use: Bool = Bool()
   val rs2_use: Bool = Bool()
@@ -33,6 +34,7 @@ class Decoder extends Module {
     io.ctrl.is_jump   := inst.is_jump
     io.ctrl.is_branch := inst.is_branch
     io.ctrl.rf_w      := inst.rf_w
+    io.ctrl.mem_r     := inst.mem_r
     io.ctrl.mem_w     := inst.mem_w
     for (i <- 0 until RF.READ_PORT) {
       io.source_sel(i) := inst.source(i)
