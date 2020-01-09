@@ -49,4 +49,8 @@ object Params {
     val NUM = 4
     val NUM_W = log2Ceil(NUM)
   }
+
+  object MEM {
+    val NUM: Int = 128
+  }
 }
