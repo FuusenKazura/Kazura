@@ -61,8 +61,12 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_id.io.branch_mispredicted := s_ex.io.alu_out =/= 0.U
   s_id.io.branch_graduated := s_ex.io.alu_ctrl_out.is_branch
   s_id.io.if_out := s_if.io.out
-  rfwrite(0).rf_w := s_ex.io.alu_ctrl_out.rf_w; rfwrite(0).rd_addr := s_ex.io.alu_ctrl_out.rd_addr; rfwrite(0).data := s_ex.io.alu_out
-  rfwrite(1).rf_w := s_im.io.out.valid;         rfwrite(1).rd_addr := s_im.io.out.bits.addr;        rfwrite(1).data := s_im.io.out.bits.data
+  rfwrite(0).rf_w := s_ex.io.alu_ctrl_out.rf_w && !s_ex.io.alu_ctrl_out.mem_r // メモリ読み出しは後のステージなので
+  rfwrite(0).rd_addr := s_ex.io.alu_ctrl_out.rd_addr
+  rfwrite(0).data := s_ex.io.alu_out
+  rfwrite(1).rf_w := s_im.io.out.valid
+  rfwrite(1).rd_addr := s_im.io.out.bits.addr
+  rfwrite(1).data := s_im.io.out.bits.data
   s_id.io.rf_write := rfwrite
 
   // --------------------
@@ -76,11 +80,12 @@ class Hart(val im: Seq[UInt]) extends Module {
 
   // --------------------
   // IM
-  s_im.io.rd_addr := s_ex.io.alu_ctrl_out.rd_addr
   s_im.io.write.valid := s_ex.io.alu_ctrl_out.mem_w
   s_im.io.write.bits.addr := s_ex.io.alu_out
   s_im.io.write.bits.data := s_ex.io.rd_out
-  s_im.io.read.valid := s_ex.io.ctrl.mem_r
+
+  s_im.io.rd_addr := s_ex.io.alu_ctrl_out.rd_addr
+  s_im.io.read.valid := s_ex.io.alu_ctrl_out.mem_r
   s_im.io.read.bits := s_ex.io.alu_out
 
   // --------------------

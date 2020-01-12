@@ -115,7 +115,7 @@ class ID extends Module {
     Source2.RS.U -> reg_file.io.out(1),
     Source2.ONE.U -> 1.U
   )))
-  io.rd := reg_file.io.out(0)
+  io.rd := RegNext(reg_file.io.out(0))
   // printf("cnt: %d, pc: %d, op: %d\n", if_out.total_cnt, if_out.pc, if_out.inst_bits.op)
   printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
   printf("stall: %d, !operands_avail: %d, branch_pend: %d\n", stall, !operands_available, branch_pending)

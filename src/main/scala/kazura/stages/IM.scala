@@ -14,12 +14,21 @@ class IMIO extends Bundle {
 
 class IM extends Module {
   val io: IMIO = IO(new IMIO)
-  val mem: SyncReadMem[UInt] = SyncReadMem(MEM.NUM, UInt(LEN.W))
+  val mem: Mem[UInt] = Mem(MEM.NUM, UInt(LEN.W))
+  val out_data: UInt = Reg(UInt(LEN.W))
 
-  io.out.valid := io.read.valid
-  io.out.bits.addr := io.rd_addr
-  io.out.bits.data := mem.read(io.read.bits, io.read.valid)
+  out_data := 0.U
   when (io.write.valid) {
     mem.write(io.write.bits.addr, io.write.bits.data)
+  } .elsewhen(io.read.valid) {
+    out_data := mem.read(io.read.bits)
   }
+
+  io.out.valid := RegNext(io.read.valid, false.B)
+  io.out.bits.addr := RegNext(io.rd_addr)
+  io.out.bits.data := out_data
+
+  // printf("MEM WRITE: en: %d, addr: %d, data: %d\n", io.write.valid, io.write.bits.addr, io.write.bits.data)
+  // printf("MEM READ: en: %d, addr: %d\n", io.read.valid, io.read.bits)
+  // printf("MEM OUT: en: %d, addr: %d, data: %d\n", io.out.valid, io.out.bits.addr, io.out.bits.data)
 }

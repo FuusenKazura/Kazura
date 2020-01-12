@@ -68,6 +68,10 @@ object SimpleUnitTest {
   ) ++ Seq.fill(100)("h0000".U) // ans: $4 == (0 to 10).sum
 }
 
+trait HasInstructions {
+  val instructions: Seq[UInt]
+}
+
 class SimpleAddUnitTester(m: Hart) extends PeekPokeTester(m) {
   step(10)
   expect(m.io.rf(1), 7)
@@ -82,6 +86,33 @@ class SimpleJumpUnitTester(m: Hart) extends PeekPokeTester(m) {
 class SimpleBeqUnitTester(m: Hart) extends PeekPokeTester(m) {
   step(10)
   expect(m.io.rf(1), 1)
+}
+
+object SimpleMemUnitTest extends HasInstructions {
+  val instructions: Seq[UInt] = Seq(
+    "b1001_001_000_000001".U,  // $1 <- 1
+    "b1011_001_000_000000".U, // Mem[$0+0] <- $1
+    "b1010_010_000_000000".U, // $2 <- Mem[$0+0]
+    "b1001_011_000001010".U,  // $3 <- 10
+    "b1001_100_000001011".U,  // $4 <- 11
+    "b1001_101_000001100".U,  // $5 <- 12
+    "b1001_110_000001101".U,  // $6 <- 13
+    "b1011_001_000_000001".U, // Mem[$0+1] <- $3
+    "b1011_001_000_000010".U, // Mem[$0+2] <- $4
+    "b1011_001_000_000011".U, // Mem[$0+3] <- $5
+    "b1011_001_000_000100".U, // Mem[$0+4] <- $6
+    "b1010_011_001_000000".U, // $3 <- Mem[$1+0]
+    "b1010_100_001_000001".U, // $4 <- Mem[$1+1]
+    "b1010_101_001_000010".U, // $5 <- Mem[$1+2]
+  ) ++ Seq.fill(32)("h0000".U)
+  class Tester(m: Hart) extends PeekPokeTester(m) {
+    step(8)
+    expect(m.io.rf(1), 1)
+    expect(m.io.rf(2), 1)
+    // expect(m.io.rf(3), 11)
+    // expect(m.io.rf(4), 12)
+    // expect(m.io.rf(5), 13)
+  }
 }
 
 class SimpleBgtUnitTester(m: Hart) extends PeekPokeTester(m) {

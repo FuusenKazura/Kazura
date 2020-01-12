@@ -25,11 +25,12 @@ class EX extends Module {
   alu.io.ctrl := io.ctrl
   alu.io.source := io.source
   alu.io.restoration_pc := io.restoration_pc
+  alu.io.rd := io.rd
   // alu.io.source_enable := 1.U === io.source_dest
   alu.io.source_enable := true.B
   io.alu_out := alu.io.alu_out
   io.alu_ctrl_out := alu.io.alu_ctrl_out
   io.restoration_pc_out := alu.io.restoration_pc_out
-  io.rd_out := RegNext(io.rd)
+  io.rd_out := alu.io.rd_out
   // io.alu_available := Wire(VecInit(true.B))
 }
