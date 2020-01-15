@@ -34,8 +34,8 @@ object Params {
     val SUB = 1
     val AND = 2
     val OR = 3
-    val EQ = 4
-    val GT = 5
+    val BEQ = 4
+    val BGT = 5
 
     val NUM = 6
     val NUM_W = log2Ceil(NUM)
