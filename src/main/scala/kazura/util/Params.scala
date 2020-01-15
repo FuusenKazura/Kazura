@@ -53,4 +53,8 @@ object Params {
   object MEM {
     val NUM: Int = 128
   }
+  object ROB {
+    val BUF_SIZE: Int = 16
+    val RESERVE_SIZE: Int = 2
+  }
 }
