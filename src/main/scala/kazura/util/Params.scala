@@ -5,6 +5,7 @@ import chisel3.util._
 object Params {
   val LEN = 16 // 命令長
   val LEN_W = log2Ceil(LEN) // Log2(LEN)
+  val PARALLEL = 4
 
   object RF {
     val NUM = 8
