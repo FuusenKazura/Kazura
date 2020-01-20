@@ -21,11 +21,11 @@ class Tester extends ChiselFlatSpec {
     //     c: M.ROB => new ROBUnitTester(c)
     //   } should be (true)
     // }
-    "BP" should s"unit test (with $backendName)" in {
-      Driver(() => new M.BranchPredictor, backendName) {
-        c: M.BranchPredictor => new BPTester(c)
-      } should be (true)
-    }
+    // "BP" should s"unit test (with $backendName)" in {
+    //   Driver(() => new M.BranchPredictor, backendName) {
+    //     c: M.BranchPredictor => new BPTester(c)
+    //   } should be (true)
+    // }
     // behavior of "stages"
     // "ID" should s"stall function unit test (with $backendName)" in {
     //   Driver(() => new S.ID, backendName) {
@@ -73,10 +73,10 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SumUnitTester(c)
     //   } should be (true)
     // }
-    // "Hart" should s"Sum Bgt Loop unit test (with $backendName)" in {
-    //   Driver(() => new Hart(SimpleUnitTest.sumBgtUnitTest), backendName) {
-    //     c: Hart => new SumUnitTester(c)
-    //   } should be (true)
-    // }
+    "Hart" should s"Sum Bgt Loop unit test (with $backendName)" in {
+      Driver(() => new Hart(SimpleUnitTest.sumBgtUnitTest), backendName) {
+        c: Hart => new SumUnitTester(c)
+      } should be (true)
+    }
   }
 }
