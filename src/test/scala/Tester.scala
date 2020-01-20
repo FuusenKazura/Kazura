@@ -2,12 +2,12 @@ import chisel3.{UInt, fromIntToLiteral, fromIntToWidth, fromStringToLiteral}
 import chisel3.iotesters._
 import kazura.{Hart, modules => M, stages => S}
 import kazura.util.Params._
-import modules.{FetchUnitTester, ROBUnitTester}
+import modules.{BPTester, FetchUnitTester, ROBUnitTester}
 import stages.{BusyBitUnitTest, RFUnitTester}
 
 class Tester extends ChiselFlatSpec {
-  private val backendNames = Array("firrtl")
-  // private val backendNames = Array("verilator", "firrtl")
+  // private val backendNames = Array("firrtl")
+  private val backendNames = Array("verilator", "firrtl")
 
   for ( backendName <- backendNames ) {
     // behavior of "modules"
@@ -16,9 +16,14 @@ class Tester extends ChiselFlatSpec {
     //     c: M.Fetch => new FetchUnitTester(c)
     //   } should be (true)
     // }
-    "ROB" should s"unit test (with $backendName)" in {
-      Driver(() => new M.ROB, backendName) {
-        c: M.ROB => new ROBUnitTester(c)
+    // "ROB" should s"unit test (with $backendName)" in {
+    //   Driver(() => new M.ROB, backendName) {
+    //     c: M.ROB => new ROBUnitTester(c)
+    //   } should be (true)
+    // }
+    "BP" should s"unit test (with $backendName)" in {
+      Driver(() => new M.BranchPredictor, backendName) {
+        c: M.BranchPredictor => new BPTester(c)
       } should be (true)
     }
     // behavior of "stages"
