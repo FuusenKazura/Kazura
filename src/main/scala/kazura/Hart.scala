@@ -2,7 +2,7 @@ package kazura
 
 import chisel3._
 import chisel3.util.experimental.BoringUtils
-import kazura.modules.RFWrite
+import kazura.modules.{BranchPredictor, RFWrite}
 import kazura.util.Params._
 import kazura.stages._
 
@@ -33,19 +33,19 @@ class HartIO extends Bundle {
 
 class Hart(val im: Seq[UInt]) extends Module {
   val io: HartIO = IO(new HartIO)
+  val m_bp: BranchPredictor = Module(new BranchPredictor())
   val s_if: IF = Module(new IF(im))
   val s_id: ID = Module(new ID)
   val s_ex: EX = Module(new EX)
   val s_im: IM = Module(new IM)
 
-  val predict: Bool = false.B // 分岐予測器からの出力
+  val predict: Bool = m_bp.io.predict // 分岐予測器からの出力
   // --------------------
   // IF
   s_if.io.in.predict := predict
   s_if.io.in.predict_enable := s_id.io.ctrl.is_branch
   s_if.io.in.predict_pc := s_id.io.jump_pc
 
-  // 今積んでいる分岐予測が予測を失敗する条件は分岐条件がtrueの場合
   s_if.io.in.branch_mispredicted := s_ex.io.mispredicted
   s_if.io.in.branch_graduated := s_ex.io.alu_ctrl_out.is_branch
   s_if.io.in.restoration_pc := s_ex.io.restoration_pc_out
@@ -54,6 +54,14 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_if.io.in.jump_pc := s_id.io.jump_pc
 
   s_if.io.in.stall := s_id.io.stall
+
+  // --------------------
+  // BP
+  m_bp.io.pc := s_if.io.out.pc
+  m_bp.io.stall := s_id.io.stall
+  m_bp.io.learning.valid := s_ex.io.alu_ctrl_out.is_branch
+  m_bp.io.learning.bits.result := s_ex.io.alu_out
+  m_bp.io.learning.bits.pc := s_ex.io.pc_out
 
   // --------------------
   // ID
