@@ -11,6 +11,7 @@ class BPLearning extends Bundle {
 
 class BPIO extends Bundle {
   val pc: UInt = Input(UInt(LEN.W))
+  val stall: Bool = Input(Bool())
   val learning: Valid[BPLearning] = Input(Valid(new BPLearning))
   val predict: Bool = Output(Bool())
 }
@@ -45,6 +46,10 @@ class BranchPredictor(val size: Int = 32) extends Module {
     "b11".U -> true.B
   ))
 
+  val prev_pc: UInt = RegInit(io.pc)
+  val pc: UInt = Mux(io.stall, prev_pc, io.pc)
+  prev_pc := pc
+
   // 学習には2クロックの遅延が必要
   // 連続して同じアドレスを更新することは考えづらいので大丈夫
   val addr: UInt = RegNext(io.learning.bits.pc)
@@ -53,5 +58,5 @@ class BranchPredictor(val size: Int = 32) extends Module {
     table.write(addr, updated)
   }
 
-  io.predict := judge(table.read(io.pc))
+  io.predict := judge(table.read(pc))
 }

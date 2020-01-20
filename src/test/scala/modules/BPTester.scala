@@ -9,6 +9,7 @@ class BPTester(m: BranchPredictor) extends PeekPokeTester(m) {
     poke(m.io.learning.valid, learning_valid)
     poke(m.io.learning.bits.pc, learning_pc)
     poke(m.io.learning.bits.result, learning_result)
+    poke(m.io.stall, false)
   }
 
   // 初期値調整
