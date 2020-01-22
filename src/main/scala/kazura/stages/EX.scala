@@ -2,12 +2,13 @@ package kazura.stages
 
 import chisel3._
 import chisel3.util._
+import kazura.models.InstInfo
 import kazura.util.Params._
-import kazura.modules.{ALU, Ctrl}
+import kazura.modules._
 
 class EXIO extends Bundle {
   // val source_dest: UInt = Input(UInt(1.W)) // 当面無視、マルチALU時に使用
-  val ctrl: Ctrl = Input(new Ctrl)
+  val ctrl: InstInfo = Input(new InstInfo)
   val source: Vec[UInt] = Input(Vec(RF.READ_PORT, UInt(LEN.W)))
   val branch_pc: UInt = Input(UInt(LEN.W))
   val next_pc: UInt = Input(UInt(LEN.W))
@@ -16,7 +17,7 @@ class EXIO extends Bundle {
   val pc: UInt = Input(UInt(LEN.W))
 
   val alu_out: UInt = Output(UInt(LEN.W))
-  val alu_ctrl_out: Ctrl = Output(new Ctrl)
+  val alu_ctrl_out: InstInfo = Output(new InstInfo)
   val restoration_pc_out: UInt = Output(UInt(LEN.W))
   val rd_out: UInt = Output(UInt(LEN.W))
   val pc_out: UInt = Output(UInt(LEN.W))

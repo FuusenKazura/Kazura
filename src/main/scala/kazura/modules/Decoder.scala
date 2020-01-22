@@ -2,27 +2,16 @@ package kazura.modules
 
 import chisel3._
 import chisel3.util._
-import kazura.models.InstBits
+import kazura.models.{InstBits, InstInfo}
 import kazura.models.Inst._
 import kazura.util.Params._
 
 class IDIO extends Bundle {
   val inst_bits: InstBits = Input(new InstBits)
-  val ctrl: Ctrl = Output(new Ctrl)
+  val ctrl: InstInfo = Output(new InstInfo)
   val source_sel: Vec[UInt] = Vec(RF.READ_PORT, Output(UInt(LEN.W)))
 }
 
-class Ctrl extends Bundle {
-  val rd_addr: UInt = UInt(RF.NUM_W.W)
-  val alu_op: UInt = UInt(ALUOP.NUM_W.W)
-  val is_jump: Bool = Bool()
-  val is_branch: Bool = Bool()
-  val rf_w: Bool = Bool()
-  val mem_r: Bool = Bool()
-  val mem_w: Bool = Bool()
-  val rs1_use: Bool = Bool()
-  val rs2_use: Bool = Bool()
-}
 
 class Decoder extends Module {
   val io: IDIO = IO(new IDIO)

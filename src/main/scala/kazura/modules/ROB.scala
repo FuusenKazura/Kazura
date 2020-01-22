@@ -2,6 +2,7 @@ package kazura.modules
 
 import chisel3._
 import chisel3.util._
+import kazura.models.{Inst, InstInfo}
 import kazura.util.Params._
 
 class ROBIO extends Bundle {
@@ -22,12 +23,8 @@ class ROBGraduate extends Bundle with ROBGraduateT {
   val mispredicted: Bool = Bool()
 }
 trait ROBGraduateT {
-  val alu_out: UInt = UInt(LEN.W)
-  val rd_addr: UInt = UInt(log2Ceil(RF.NUM).W)
-  val is_halt: Bool = Bool()
-  val reg_w: Bool = Bool()
-  val mem_r: Bool = Bool()
-  val mem_w: Bool = Bool()
+  val data: UInt = UInt(LEN.W)
+  val ctrl: InstInfo = new InstInfo
 }
 
 class ROB extends Module {
@@ -38,12 +35,13 @@ class ROB extends Module {
 
   buf_init.committable := false.B
 
-  buf_init.alu_out := 0.U
-  buf_init.rd_addr := 0.U
-  buf_init.is_halt := false.B
-  buf_init.reg_w := false.B
-  buf_init.mem_r := false.B
-  buf_init.mem_w := false.B
+  buf_init.data := 0.U
+  buf_init.ctrl := InstInfo.nop
+  // buf_init.rd_addr := 0.U
+  // buf_init.is_halt := false.B
+  // buf_init.reg_w := false.B
+  // buf_init.mem_r := false.B
+  // buf_init.mem_w := false.B
 
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
   val uncommited_head_r: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
@@ -121,10 +119,10 @@ class ROB extends Module {
       // commit
       buf(i).empty := true.B
       val l = i.U - uncommited_head_r
-      printf(s"commit(%d).data = %d\n", l, buf(i).alu_out)
-      io.commit(l).rf_w := buf(i).reg_w
-      io.commit(l).rd_addr := buf(i).rd_addr
-      io.commit(l).data := buf(i).alu_out
+      printf(s"commit(%d).data = %d\n", l, buf(i).data)
+      io.commit(l).rf_w := buf(i).ctrl.rf_w
+      io.commit(l).rd_addr := buf(i).ctrl.rd_addr
+      io.commit(l).data := buf(i).data
     } .otherwise {
       // graduate
       // EX, MAから出てくるデータを取り込む、それらのデータはDispatch, Commitの対象になることはないので問題なし
@@ -134,18 +132,19 @@ class ROB extends Module {
 
       when (graduate.valid && i.U === graduate.bits.addr) {
         buf(i).committable := true.B
-        buf(i).is_halt := graduate.bits.is_halt
-        buf(i).reg_w := graduate.bits.reg_w
-        buf(i).mem_r := graduate.bits.mem_r
-        buf(i).mem_w := graduate.bits.mem_w
-        buf(i).rd_addr := graduate.bits.rd_addr
-        buf(i).alu_out := graduate.bits.alu_out
+        buf(i).ctrl := graduate.bits.ctrl
+        // buf(i).is_halt := graduate.bits.is_halt
+        // buf(i).reg_w := graduate.bits.reg_w
+        // buf(i).mem_r := graduate.bits.mem_r
+        // buf(i).mem_w := graduate.bits.mem_w
+        // buf(i).rd_addr := graduate.bits.rd_addr
+        buf(i).data := graduate.bits.data
       }
     }
   }
   for (i <- 0 until 9) {
     printf("buf(%d): empty: %d | commitable: %d | rw: %d | data: %d\n", i.U,
-      buf(i).empty, buf(i).committable, buf(i).reg_w, buf(i).alu_out)
+      buf(i).empty, buf(i).committable, buf(i).ctrl.rf_w, buf(i).data)
   }
   printf("------------------------------\n")
 }

@@ -2,9 +2,9 @@ package kazura.stages
 
 import chisel3._
 import chisel3.util.MuxLookup
-import kazura.modules.{BusyBit, Ctrl, Decoder, RFWrite, RegisterFile}
+import kazura.modules._
 import kazura.util.Params._
-import kazura.models.Inst
+import kazura.models._
 
 class IDIO extends Bundle {
   val predict: Bool = Input(Bool()) // 分岐予測の予測
@@ -16,7 +16,7 @@ class IDIO extends Bundle {
 
   val jump_pc: UInt = Output(UInt(LEN.W))
   val next_pc: UInt = Output(UInt(LEN.W))
-  val ctrl: Ctrl = Output(new Ctrl)
+  val ctrl: InstInfo = Output(new InstInfo)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
   val rd: UInt = Output(UInt(LEN.W))
   val stall: Bool = Output(Bool())
@@ -97,8 +97,8 @@ class ID extends Module {
     false.B)
 
   io.ctrl := RegNext(
-    Mux(stall || clear_instruction, Inst.nop, decoder.io.ctrl),
-    Inst.nop
+    Mux(stall || clear_instruction, InstInfo.nop, decoder.io.ctrl),
+    InstInfo.nop
   )
 
   io.jump_pc := RegNext(Mux(decoder.io.ctrl.is_jump,

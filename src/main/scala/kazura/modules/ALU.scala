@@ -3,10 +3,10 @@ package kazura.modules
 import chisel3._
 import chisel3.util.MuxLookup
 import kazura.util.Params._
-import kazura.models.Inst
+import kazura.models._
 
 class ALUIO extends Bundle {
-  val ctrl: Ctrl = Input(new Ctrl)
+  val ctrl: InstInfo = Input(new InstInfo)
   val source: Vec[UInt] = Vec(2, Input(UInt(LEN.W)))
   val source_enable: Bool = Input(Bool())
   val next_pc: UInt = Input(UInt(LEN.W))
@@ -16,7 +16,7 @@ class ALUIO extends Bundle {
   val pc: UInt = Input(UInt(LEN.W))
 
   val alu_out: UInt = Output(UInt(LEN.W))
-  val alu_ctrl_out: Ctrl = Output(new Ctrl)
+  val alu_ctrl_out: InstInfo = Output(new InstInfo)
   val restoration_pc: UInt = Output(UInt(LEN.W))
   val rd_out: UInt = Output(UInt(LEN.W))
   val pc_out: UInt = Output(UInt(LEN.W))
@@ -34,7 +34,7 @@ class ALU extends Module {
     ALUOP.BGT.U  -> io.source(0).>(io.source(1))
   ))
   io.alu_out := RegNext(alu_out)
-  io.alu_ctrl_out := RegNext(io.ctrl, Inst.nop)
+  io.alu_ctrl_out := RegNext(io.ctrl, InstInfo.nop)
   io.restoration_pc := RegNext(Mux(io.predict,
     io.next_pc, // TODO: 整理
     io.branch_pc

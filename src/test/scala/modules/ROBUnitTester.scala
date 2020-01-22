@@ -25,10 +25,10 @@ class ROBUnitTester(m: ROB) extends PeekPokeTester(m) {
   // rob(0)の命令をgraduate, rob(0)がまだなのでcommitは不可能
   poke(m.io.graduate(2).valid, true)
   poke(m.io.graduate(2).bits.mispredicted, false)
-  poke(m.io.graduate(2).bits.reg_w, true)
+  poke(m.io.graduate(2).bits.ctrl.rf_w, true)
   poke(m.io.graduate(2).bits.addr, 1)
-  poke(m.io.graduate(2).bits.rd_addr, 1)
-  poke(m.io.graduate(2).bits.alu_out, 10)
+  poke(m.io.graduate(2).bits.ctrl.rd_addr, 1)
+  poke(m.io.graduate(2).bits.data, 10)
   step(1) // ------------------------------------------------------------
 
   for (i <- m.io.commit.indices) expect(m.io.commit(i).rf_w, false)
@@ -42,10 +42,10 @@ class ROBUnitTester(m: ROB) extends PeekPokeTester(m) {
   // rob(1)の命令をgraduate, これでrob(1)以下の命令をcommit可能に
   poke(m.io.graduate(0).valid, true)
   poke(m.io.graduate(0).bits.mispredicted, false)
-  poke(m.io.graduate(0).bits.reg_w, true)
+  poke(m.io.graduate(0).bits.ctrl.rf_w, true)
   poke(m.io.graduate(0).bits.addr, 0)
-  poke(m.io.graduate(0).bits.rd_addr, 2)
-  poke(m.io.graduate(0).bits.alu_out, 20)
+  poke(m.io.graduate(0).bits.ctrl.rd_addr, 2)
+  poke(m.io.graduate(0).bits.data, 20)
   step(1) // ------------------------------------------------------------
 
   expect(m.io.commit(0).rf_w, true)
