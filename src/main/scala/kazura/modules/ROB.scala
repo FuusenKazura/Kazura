@@ -2,7 +2,7 @@ package kazura.modules
 
 import chisel3._
 import chisel3.util._
-import kazura.models.{Inst, InstInfo}
+import kazura.models.{Ctrl, Inst, InstInfo}
 import kazura.util.Params._
 
 class ROBIO extends Bundle {
@@ -24,7 +24,7 @@ class ROBGraduate extends Bundle with ROBGraduateT {
 }
 trait ROBGraduateT {
   val data: UInt = UInt(LEN.W)
-  val ctrl: InstInfo = new InstInfo
+  val inst_info: InstInfo = new InstInfo
 }
 
 class ROB extends Module {
@@ -36,7 +36,7 @@ class ROB extends Module {
   buf_init.committable := false.B
 
   buf_init.data := 0.U
-  buf_init.ctrl := InstInfo.nop
+  buf_init.inst_info := Ctrl.nop
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
 
   val uncommited: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
@@ -94,14 +94,14 @@ class ROB extends Module {
     } .elsewhen(store_entry) {
       buf(i).committable := true.B
       buf(i).data := graduate.bits.data
-      buf(i).ctrl := graduate.bits.ctrl
+      buf(i).inst_info := graduate.bits.inst_info
     }
   }
 
   for (i <- 0 until PARALLEL) {
     val commit_entry = buf(uncommited + i.U)
-    io.commit(i).rf_w := i.U < can_commit_cnt && commit_entry.ctrl.rf_w
-    io.commit(i).rd_addr := commit_entry.ctrl.rd_addr
+    io.commit(i).rf_w := i.U < can_commit_cnt && commit_entry.inst_info.ctrl.rf_w
+    io.commit(i).rd_addr := commit_entry.inst_info.rd_addr
     io.commit(i).data := commit_entry.data
   }
   for (i <- 0 until PARALLEL) {

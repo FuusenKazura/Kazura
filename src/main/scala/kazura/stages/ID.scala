@@ -16,7 +16,7 @@ class IDIO extends Bundle {
 
   val jump_pc: UInt = Output(UInt(LEN.W))
   val next_pc: UInt = Output(UInt(LEN.W))
-  val ctrl: InstInfo = Output(new InstInfo)
+  val inst_info: InstInfo = Output(new InstInfo)
   val source: Vec[UInt] = Output(Vec(RF.READ_PORT, UInt(LEN.W)))
   val rd: UInt = Output(UInt(LEN.W))
   val stall: Bool = Output(Bool())
@@ -96,9 +96,10 @@ class ID extends Module {
       && stall,
     false.B)
 
-  io.ctrl := RegNext(
-    Mux(stall || clear_instruction, InstInfo.nop, decoder.io.ctrl),
-    InstInfo.nop
+  io.inst_info.rd_addr := RegNext(if_out.inst_bits.rd)
+  io.inst_info.ctrl := RegNext(
+    Mux(stall || clear_instruction, Ctrl.nop, decoder.io.ctrl),
+    Ctrl.nop
   )
 
   io.jump_pc := RegNext(Mux(decoder.io.ctrl.is_jump,

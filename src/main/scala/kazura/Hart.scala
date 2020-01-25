@@ -43,14 +43,14 @@ class Hart(val im: Seq[UInt]) extends Module {
   // --------------------
   // IF
   s_if.io.in.predict := predict
-  s_if.io.in.predict_enable := s_id.io.ctrl.is_branch
+  s_if.io.in.predict_enable := s_id.io.inst_info.ctrl.is_branch
   s_if.io.in.predict_pc := s_id.io.jump_pc
 
   s_if.io.in.branch_mispredicted := s_ex.io.mispredicted
-  s_if.io.in.branch_graduated := s_ex.io.alu_ctrl_out.is_branch
+  s_if.io.in.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch
   s_if.io.in.restoration_pc := s_ex.io.restoration_pc_out
 
-  s_if.io.in.is_jump := s_id.io.ctrl.is_jump
+  s_if.io.in.is_jump := s_id.io.inst_info.ctrl.is_jump
   s_if.io.in.jump_pc := s_id.io.jump_pc
 
   s_if.io.in.stall := s_id.io.stall
@@ -59,7 +59,7 @@ class Hart(val im: Seq[UInt]) extends Module {
   // BP
   m_bp.io.pc := s_if.io.out.pc
   m_bp.io.stall := s_id.io.stall
-  m_bp.io.learning.valid := s_ex.io.alu_ctrl_out.is_branch
+  m_bp.io.learning.valid := s_ex.io.inst_info_out.ctrl.is_branch
   m_bp.io.learning.bits.result := s_ex.io.alu_out
   m_bp.io.learning.bits.pc := s_ex.io.pc_out
 
@@ -68,10 +68,10 @@ class Hart(val im: Seq[UInt]) extends Module {
   val rfwrite: Vec[RFWrite] = Wire(Vec(RF.WRITE_PORT, new RFWrite))
   s_id.io.predict := predict // 分岐予測器未実装のため
   s_id.io.branch_mispredicted := s_ex.io.mispredicted
-  s_id.io.branch_graduated := s_ex.io.alu_ctrl_out.is_branch
+  s_id.io.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch
   s_id.io.if_out := s_if.io.out
-  rfwrite(0).rf_w := s_ex.io.alu_ctrl_out.rf_w // メモリ読み出しは後のステージなので
-  rfwrite(0).rd_addr := s_ex.io.alu_ctrl_out.rd_addr
+  rfwrite(0).rf_w := s_ex.io.inst_info_out.ctrl.rf_w // メモリ読み出しは後のステージなので
+  rfwrite(0).rd_addr := s_ex.io.inst_info_out.rd_addr
   rfwrite(0).data := s_ex.io.alu_out
   rfwrite(1).rf_w := s_im.io.out.valid
   rfwrite(1).rd_addr := s_im.io.out.bits.addr
@@ -81,7 +81,7 @@ class Hart(val im: Seq[UInt]) extends Module {
   // --------------------
   // EX
   s_ex.io.predict := predict
-  s_ex.io.ctrl := s_id.io.ctrl
+  s_ex.io.inst_info := s_id.io.inst_info
   s_ex.io.source := s_id.io.source
   s_ex.io.rd := s_id.io.rd
   s_ex.io.next_pc := s_id.io.next_pc
@@ -90,12 +90,12 @@ class Hart(val im: Seq[UInt]) extends Module {
 
   // --------------------
   // IM
-  s_im.io.write.valid := s_ex.io.alu_ctrl_out.mem_w
+  s_im.io.write.valid := s_ex.io.inst_info_out.ctrl.mem_w
   s_im.io.write.bits.addr := s_ex.io.alu_out
   s_im.io.write.bits.data := s_ex.io.rd_out
 
-  s_im.io.rd_addr := s_ex.io.alu_ctrl_out.rd_addr
-  s_im.io.read.valid := s_ex.io.alu_ctrl_out.mem_r
+  s_im.io.rd_addr := s_ex.io.inst_info_out.rd_addr
+  s_im.io.read.valid := s_ex.io.inst_info_out.ctrl.mem_r
   s_im.io.read.bits := s_ex.io.alu_out
 
   // --------------------
