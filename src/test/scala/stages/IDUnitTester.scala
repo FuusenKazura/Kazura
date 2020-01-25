@@ -20,9 +20,9 @@ abstract class IDUnitTestHelper(m: ID) extends PeekPokeTester(m) {
   case class WriteData(rd: Int, data: Int)
   def writeData(data: Seq[Option[WriteData]]): Unit = {
     for ((i, d) <- data.indices zip data) {
-      poke(m.io.rf_write(i).rf_w, d.nonEmpty)
-      poke(m.io.rf_write(i).rd_addr, d.map(_.rd).getOrElse(0))
-      poke(m.io.rf_write(i).data, d.map(_.data).getOrElse(0))
+      poke(m.io.commit(i).rf_w, d.nonEmpty)
+      poke(m.io.commit(i).rd_addr, d.map(_.rd).getOrElse(0))
+      poke(m.io.commit(i).data, d.map(_.data).getOrElse(0))
     }
   }
 }

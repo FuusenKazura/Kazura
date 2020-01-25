@@ -19,7 +19,7 @@ trait ROBEntryT extends ROBGraduateT {
 }
 
 class ROBGraduate extends Bundle with ROBGraduateT {
-  val addr: UInt = UInt(log2Ceil(ROB.BUF_SIZE).W)
+  val addr: UInt = UInt(log2Ceil(ROB.BUF_SIZE).W) // TODO: InstInfoと纏める
   val mispredicted: Bool = Bool()
 }
 trait ROBGraduateT {
@@ -36,6 +36,7 @@ class ROB extends Module {
   buf_init.committable := false.B
 
   buf_init.data := 0.U
+  buf_init.inst_info.rob_addr := 0.U
   buf_init.inst_info.rd_addr := 0.U
   buf_init.inst_info.ctrl := Ctrl.nop
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))

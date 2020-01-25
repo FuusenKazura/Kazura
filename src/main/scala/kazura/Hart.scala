@@ -2,7 +2,7 @@ package kazura
 
 import chisel3._
 import chisel3.util.experimental.BoringUtils
-import kazura.modules.{BranchPredictor, RFWrite}
+import kazura.modules.{BranchPredictor, RFWrite, ROB}
 import kazura.util.Params._
 import kazura.stages._
 
@@ -38,6 +38,7 @@ class Hart(val im: Seq[UInt]) extends Module {
   val s_id: ID = Module(new ID)
   val s_ex: EX = Module(new EX)
   val s_im: IM = Module(new IM)
+  val m_rob: ROB = Module(new ROB)
 
   val predict: Bool = m_bp.io.predict // 分岐予測器からの出力
   // --------------------
@@ -65,18 +66,17 @@ class Hart(val im: Seq[UInt]) extends Module {
 
   // --------------------
   // ID
-  val rfwrite: Vec[RFWrite] = Wire(Vec(RF.WRITE_PORT, new RFWrite))
   s_id.io.predict := predict // 分岐予測器未実装のため
   s_id.io.branch_mispredicted := s_ex.io.mispredicted
   s_id.io.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch
   s_id.io.if_out := s_if.io.out
-  rfwrite(0).rf_w := s_ex.io.inst_info_out.ctrl.rf_w // メモリ読み出しは後のステージなので
-  rfwrite(0).rd_addr := s_ex.io.inst_info_out.rd_addr
-  rfwrite(0).data := s_ex.io.alu_out
-  rfwrite(1).rf_w := s_im.io.out.valid
-  rfwrite(1).rd_addr := s_im.io.out.bits.addr
-  rfwrite(1).data := s_im.io.out.bits.data
-  s_id.io.rf_write := rfwrite
+  val rfwrite_nop: RFWrite = Wire(new RFWrite)
+  rfwrite_nop.rf_w := false.B
+  rfwrite_nop.rd_addr := 0.U
+  rfwrite_nop.data := 0.U
+  s_id.io.commit(0) := m_rob.io.commit(0)
+  s_id.io.commit(1) := rfwrite_nop
+  s_id.io.unreserved_head := m_rob.io.unreserved_head
 
   // --------------------
   // EX
@@ -90,13 +90,23 @@ class Hart(val im: Seq[UInt]) extends Module {
 
   // --------------------
   // IM
-  s_im.io.write.valid := s_ex.io.inst_info_out.ctrl.mem_w
-  s_im.io.write.bits.addr := s_ex.io.alu_out
-  s_im.io.write.bits.data := s_ex.io.rd_out
+  s_im.io.inst_info := s_ex.io.inst_info_out
+  s_im.io.alu_out := s_ex.io.alu_out
+  s_im.io.rd_out := s_ex.io.rd_out
 
-  s_im.io.rd_addr := s_ex.io.inst_info_out.rd_addr
-  s_im.io.read.valid := s_ex.io.inst_info_out.ctrl.mem_r
-  s_im.io.read.bits := s_ex.io.alu_out
+  // --------------------
+  // ROB
+  m_rob.io.used_num := s_id.io.used_num
+  m_rob.io.graduate(0).valid := s_ex.io.inst_info_out.ctrl.rf_w // TODO: inst_infoにvalidかどうかの情報を加える
+  m_rob.io.graduate(0).bits.addr := s_ex.io.inst_info_out.rob_addr
+  m_rob.io.graduate(0).bits.mispredicted := s_ex.io.mispredicted
+  m_rob.io.graduate(0).bits.inst_info := s_ex.io.inst_info_out
+  m_rob.io.graduate(0).bits.data := s_ex.io.alu_out
+  m_rob.io.graduate(1).valid := s_im.io.inst_info.ctrl.rf_w
+  m_rob.io.graduate(1).bits.addr := s_im.io.inst_info.rob_addr
+  m_rob.io.graduate(1).bits.mispredicted := false.B
+  m_rob.io.graduate(1).bits.inst_info := s_im.io.inst_info
+  m_rob.io.graduate(1).bits.data := s_im.io.mem_out
 
   // --------------------
   // IO

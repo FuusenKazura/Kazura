@@ -1,7 +1,7 @@
 package kazura.stages
 
 import chisel3._
-import chisel3.util.MuxLookup
+import chisel3.util.{MuxLookup, Valid, log2Ceil}
 import kazura.modules._
 import kazura.util.Params._
 import kazura.models._
@@ -12,7 +12,10 @@ class IDIO extends Bundle {
   val branch_graduated: Bool = Input(Bool()) // 分岐命令の演算が完了したか(完了した演算が分岐であるか)
 
   val if_out: IFOut = Input(new IFOut)
-  val rf_write: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
+
+  val commit: Vec[RFWrite] = Vec(RF.WRITE_PORT, Input(new RFWrite))
+  val unreserved_head: Vec[Valid[UInt]] = Input(Vec(PARALLEL, Valid(UInt(log2Ceil(ROB.BUF_SIZE).W))))
+  val used_num: UInt = Output(UInt(log2Ceil(PARALLEL + 1).W))
 
   val jump_pc: UInt = Output(UInt(LEN.W))
   val next_pc: UInt = Output(UInt(LEN.W))
@@ -39,7 +42,7 @@ class ID extends Module {
   predict := Mux(io.stall, predict_r, io.predict)
 
   // 書き込みデータはIDより後の話なのでstall関係なし
-  val rf_write: Vec[RFWrite] = io.rf_write
+  val rf_write: Vec[RFWrite] = io.commit
 
   val stall: Bool = Wire(Bool())
 
@@ -77,26 +80,32 @@ class ID extends Module {
     clear_instruction := false.B
   }
 
-  // 分岐命令の発行中は次の命令の発行を停止する
-  // Speculative execution beyond branchは一旦諦めよう……
-  // TODO: このロジックバグってる(連続でbranchが来る場合), branch後にjumpが来るパターンもバグ発生
-  val branch_pending: Bool = RegInit(false.B)
-  branch_pending := Mux(io.branch_graduated,
-    false.B,
-    (!stall && decoder.io.ctrl.is_branch) || branch_pending)
-
-  // すべてのレジスタが準備できない時はhalt
+  // すべてのレジスタが準備できない時はstall
   val operands_available: Bool =
     (busy_bit.io.rs_available(0) || !decoder.io.ctrl.rs1_use) &&
     (busy_bit.io.rs_available(1) || !decoder.io.ctrl.rs2_use)
 
-  stall := !operands_available || branch_pending
+  // ROBが確保できなかった場合はstall
+  val rob_available: Vec[Bool] = Wire(Vec(PARALLEL, Bool()))
+  rob_available(0) := io.unreserved_head(0).valid
+  for (i <- 1 until PARALLEL) {
+    rob_available(i) := rob_available(i - 1) && io.unreserved_head(i).valid
+  }
+
+  stall := !operands_available || !rob_available(0)
   io.stall := RegNext(
     !(io.branch_graduated && io.branch_mispredicted) // 分岐予測に失敗した場合、状態をリセット
       && stall,
     false.B)
 
+  io.used_num := RegNext(Mux(
+    stall || clear_instruction,
+    0.U,
+    1.U
+  ))
+
   io.inst_info.rd_addr := RegNext(if_out.inst_bits.rd)
+  io.inst_info.rob_addr := RegNext(io.unreserved_head(0).bits)
   io.inst_info.ctrl := RegNext(
     Mux(stall || clear_instruction, Ctrl.nop, decoder.io.ctrl),
     Ctrl.nop
@@ -121,7 +130,7 @@ class ID extends Module {
   io.pc := RegNext(if_out.pc)
   // printf("cnt: %d, pc: %d, op: %d\n", if_out.total_cnt, if_out.pc, if_out.inst_bits.op)
   printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
-  printf("stall: %d, !operands_avail: %d, branch_pend: %d\n", stall, !operands_available, branch_pending)
+  printf("stall: %d, !operands_avail: %d, !rob_avail(0): %d\n", stall, !operands_available, !rob_available(0))
   // printf("alu_op: %d\n", decoder.io.ctrl.alu_op)
   printf("source(0): %d\n", io.source(0))
   printf("source(1): %d\n", io.source(1))

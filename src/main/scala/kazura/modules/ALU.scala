@@ -34,6 +34,7 @@ class ALU extends Module {
     ALUOP.BGT.U  -> io.source(0).>(io.source(1))
   ))
   io.alu_out := RegNext(alu_out)
+  io.inst_info_out.rob_addr := RegNext(io.inst_info.rob_addr)
   io.inst_info_out.rd_addr := RegNext(io.inst_info.rd_addr)
   io.inst_info_out.ctrl := RegNext(io.inst_info.ctrl, Ctrl.nop)
   io.restoration_pc := RegNext(Mux(io.predict,
