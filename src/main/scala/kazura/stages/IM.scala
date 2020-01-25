@@ -26,9 +26,7 @@ class IM extends Module {
   }
 
   io.mem_out := out_data
-  io.inst_info_out.rob_addr := RegNext(io.inst_info.rob_addr)
-  io.inst_info_out.rd_addr := RegNext(io.inst_info.rd_addr)
-  io.inst_info_out.ctrl := RegNext(io.inst_info.ctrl, Ctrl.nop)
+  io.inst_info_out := RegNext(io.inst_info, InstInfo.nop)
 
   // printf("MEM WRITE: en: %d, addr: %d, data: %d\n", io.write.valid, io.write.bits.addr, io.write.bits.data)
   // printf("MEM READ: en: %d, addr: %d\n", io.read.valid, io.read.bits)

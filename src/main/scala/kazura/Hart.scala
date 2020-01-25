@@ -48,7 +48,7 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_if.io.in.predict_pc := s_id.io.jump_pc
 
   s_if.io.in.branch_mispredicted := s_ex.io.mispredicted
-  s_if.io.in.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch
+  s_if.io.in.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch // TODO: mispredictedを分岐時にのみ出すようにしたので消す
   s_if.io.in.restoration_pc := s_ex.io.restoration_pc_out
 
   s_if.io.in.is_jump := s_id.io.inst_info.ctrl.is_jump
@@ -97,12 +97,12 @@ class Hart(val im: Seq[UInt]) extends Module {
   // --------------------
   // ROB
   m_rob.io.used_num := s_id.io.used_num
-  m_rob.io.graduate(0).valid := s_ex.io.inst_info_out.ctrl.rf_w // TODO: inst_infoにvalidかどうかの情報を加える
+  m_rob.io.graduate(0).valid := s_ex.io.inst_info_out.valid
   m_rob.io.graduate(0).bits.addr := s_ex.io.inst_info_out.rob_addr
   m_rob.io.graduate(0).bits.mispredicted := s_ex.io.mispredicted
   m_rob.io.graduate(0).bits.inst_info := s_ex.io.inst_info_out
   m_rob.io.graduate(0).bits.data := s_ex.io.alu_out
-  m_rob.io.graduate(1).valid := s_im.io.inst_info.ctrl.rf_w
+  m_rob.io.graduate(1).valid := s_im.io.inst_info.valid
   m_rob.io.graduate(1).bits.addr := s_im.io.inst_info.rob_addr
   m_rob.io.graduate(1).bits.mispredicted := false.B
   m_rob.io.graduate(1).bits.inst_info := s_im.io.inst_info

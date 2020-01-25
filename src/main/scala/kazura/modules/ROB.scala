@@ -36,9 +36,7 @@ class ROB extends Module {
   buf_init.committable := false.B
 
   buf_init.data := 0.U
-  buf_init.inst_info.rob_addr := 0.U
-  buf_init.inst_info.rd_addr := 0.U
-  buf_init.inst_info.ctrl := Ctrl.nop
+  buf_init.inst_info := InstInfo.nop
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
 
   val uncommited: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
@@ -84,8 +82,8 @@ class ROB extends Module {
     val store_entry = graduate.valid && graduate.bits.addr === i.U
 
     if (i < 6) {
-      printf("buf(%d) | mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
-        i.U, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
+      printf("buf(%d) | pc: %d, total_cnt: %d, mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
+        i.U, buf(i).inst_info.pc, buf(i).inst_info.total_cnt, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
     }
 
     when(mispredict_restore_entry) {
@@ -105,9 +103,15 @@ class ROB extends Module {
 
   for (i <- 0 until PARALLEL) {
     val commit_entry = buf(uncommited + i.U)
-    io.commit(i).rf_w := i.U < can_commit_cnt && commit_entry.inst_info.ctrl.rf_w
-    io.commit(i).rd_addr := commit_entry.inst_info.rd_addr
-    io.commit(i).data := commit_entry.data
+    when (i.U < can_commit_cnt) {
+      io.commit(i).rf_w := commit_entry.inst_info.ctrl.rf_w
+      io.commit(i).rd_addr := commit_entry.inst_info.rd_addr
+      io.commit(i).data := commit_entry.data
+    } .otherwise {
+      io.commit(i).rf_w := false.B
+      io.commit(i).rd_addr := 0.U
+      io.commit(i).data := 655535.U
+    }
   }
   for (i <- 0 until PARALLEL) {
     io.unreserved_head(i).valid := unreserved_add_used_valid && !mispredicted

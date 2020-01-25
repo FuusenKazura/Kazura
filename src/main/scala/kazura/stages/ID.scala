@@ -1,6 +1,6 @@
 package kazura.stages
 
-import chisel3._
+import chisel3.{Mux, _}
 import chisel3.util.{MuxLookup, Valid, log2Ceil}
 import kazura.modules._
 import kazura.util.Params._
@@ -92,23 +92,28 @@ class ID extends Module {
     rob_available(i) := rob_available(i - 1) && io.unreserved_head(i).valid
   }
 
-  stall := !operands_available || !rob_available(0)
-  io.stall := RegNext(
-    !(io.branch_graduated && io.branch_mispredicted) // 分岐予測に失敗した場合、状態をリセット
-      && stall,
-    false.B)
+  // clear_instructionsが有効なときはstallしない
+  stall := Mux(clear_instruction, false.B, !operands_available || !rob_available(0))
+  io.stall := RegNext(stall, false.B)
 
+  // NOPの場合はreserveしないようにする
   io.used_num := RegNext(Mux(
-    stall || clear_instruction,
+    stall || clear_instruction || if_out.inst_bits.op === Inst.Nop.op,
     0.U,
     1.U
-  ))
+  ), 0.U)
 
-  io.inst_info.rd_addr := RegNext(if_out.inst_bits.rd)
-  io.inst_info.rob_addr := RegNext(io.unreserved_head(0).bits)
+  io.inst_info.valid := RegNext(
+    !(stall || clear_instruction || if_out.inst_bits.op === Inst.Nop.op),
+    InstInfo.nop.valid
+  )
+  io.inst_info.pc := RegNext(if_out.pc, InstInfo.nop.pc)
+  io.inst_info.total_cnt := RegNext(if_out.total_cnt, InstInfo.nop.total_cnt)
+  io.inst_info.rd_addr := RegNext(if_out.inst_bits.rd, InstInfo.nop.rd_addr)
+  io.inst_info.rob_addr := io.unreserved_head(0).bits
   io.inst_info.ctrl := RegNext(
-    Mux(stall || clear_instruction, Ctrl.nop, decoder.io.ctrl),
-    Ctrl.nop
+    Mux(stall || clear_instruction ,InstInfo.nop.ctrl, decoder.io.ctrl),
+    InstInfo.nop.ctrl
   )
 
   io.jump_pc := RegNext(Mux(decoder.io.ctrl.is_jump,

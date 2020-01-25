@@ -73,18 +73,18 @@ trait HasInstructions {
 }
 
 class SimpleAddUnitTester(m: Hart) extends PeekPokeTester(m) {
-  step(10)
+  step(20)
   expect(m.io.rf(1), 7)
   expect(m.io.rf(2), 2)
 }
 
 class SimpleJumpUnitTester(m: Hart) extends PeekPokeTester(m) {
-  step(10)
+  step(20)
   expect(m.io.rf(1), 1)
 }
 
 class SimpleBeqUnitTester(m: Hart) extends PeekPokeTester(m) {
-  step(10)
+  step(20)
   expect(m.io.rf(1), 1)
 }
 
@@ -124,5 +124,3 @@ class SumUnitTester(m: Hart) extends PeekPokeTester(m) {
   step(200)
   expect(m.io.rf(4), (0 to 10).sum)
 }
-
-
