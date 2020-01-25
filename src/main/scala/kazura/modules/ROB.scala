@@ -81,10 +81,10 @@ class ROB extends Module {
     )
     val store_entry = graduate.valid && graduate.bits.addr === i.U
 
-    if (i < 6) {
-      printf("buf(%d) | pc: %d, total_cnt: %d, mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
-        i.U, buf(i).inst_info.pc, buf(i).inst_info.total_cnt, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
-    }
+    // if (i < 6) {
+    //   printf("buf(%d) | pc: %d, total_cnt: %d, mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
+    //     i.U, buf(i).inst_info.pc, buf(i).inst_info.total_cnt, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
+    // }
 
     when(mispredict_restore_entry) {
       buf(i).reserved := false.B

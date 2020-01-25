@@ -43,16 +43,16 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SimpleAddUnitTester(c)
     //   } should be (true)
     // }
-    "Hart" should s"Simple Jump unit test (with $backendName)" in {
-      Driver(() => new Hart(SimpleUnitTest.jumpUnitTest), backendName) {
-        c: Hart => new SimpleJumpUnitTester(c)
-      } should be (true)
-    }
-    // "Hart" should s"Simple Jump2 unit test (with $backendName)" in {
-    //   Driver(() => new Hart(SimpleUnitTest.jumpUnitTest2), backendName) {
+    // "Hart" should s"Simple Jump unit test (with $backendName)" in {
+    //   Driver(() => new Hart(SimpleUnitTest.jumpUnitTest), backendName) {
     //     c: Hart => new SimpleJumpUnitTester(c)
     //   } should be (true)
     // }
+    // // "Hart" should s"Simple Jump2 unit test (with $backendName)" in {
+    // //   Driver(() => new Hart(SimpleUnitTest.jumpUnitTest2), backendName) {
+    // //     c: Hart => new SimpleJumpUnitTester(c)
+    // //   } should be (true)
+    // // }
     // "Hart" should s"Simple beq unit test (with $backendName)" in {
     //   Driver(() => new Hart(SimpleUnitTest.beqUnitTest), backendName) {
     //     c: Hart => new SimpleBeqUnitTester(c)
@@ -68,11 +68,11 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SimpleMemUnitTest.Tester(c)
     //   } should be (true)
     // }
-    // "Hart" should s"Sum Beq Loop unit test (with $backendName)" in {
-    //   Driver(() => new Hart(SimpleUnitTest.sumBeqUnitTest), backendName) {
-    //     c: Hart => new SumUnitTester(c)
-    //   } should be (true)
-    // }
+    "Hart" should s"Sum Beq Loop unit test (with $backendName)" in {
+      Driver(() => new Hart(SimpleUnitTest.sumBeqUnitTest), backendName) {
+        c: Hart => new SumUnitTester(c)
+      } should be (true)
+    }
     // "Hart" should s"Sum Bgt Loop unit test (with $backendName)" in {
     //   Driver(() => new Hart(SimpleUnitTest.sumBgtUnitTest), backendName) {
     //     c: Hart => new SumUnitTester(c)

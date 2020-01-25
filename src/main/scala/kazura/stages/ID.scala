@@ -71,9 +71,9 @@ class ID extends Module {
   //    + jumpの次
   //    + 分岐したとき(branch次にpredictがtrueの時)
   when (
-       (io.branch_graduated && io.branch_mispredicted)
-    || (RegNext(decoder.io.ctrl.is_jump, false.B))
-    || (RegNext(decoder.io.ctrl.is_branch, false.B) && predict)
+       io.branch_mispredicted
+    || (RegNext(!clear_instruction && decoder.io.ctrl.is_jump, false.B))
+    || (RegNext(!clear_instruction && decoder.io.ctrl.is_branch, false.B) && predict)
   ) {
     clear_instruction := true.B
   } .otherwise {
