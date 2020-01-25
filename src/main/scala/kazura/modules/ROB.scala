@@ -7,14 +7,14 @@ import kazura.util.Params._
 
 class ROBIO extends Bundle {
   val used_num: UInt = Input(UInt(log2Ceil(PARALLEL + 1).W)) // 0 to PARALLEL, 先のクロックで、いくつROBが必要とされたか
-  val graduate: Vec[Valid[ROBGraduate]] = Input(Vec(PARALLEL*2, Valid(new ROBGraduate)))
+  val graduate: Vec[Valid[ROBGraduate]] = Input(Vec(PARALLEL*2, Valid(new ROBGraduate))) // 今はALUの個数+メモリユニットからの個数個のgraduateがありえる
   val commit: Vec[RFWrite] = Output(Vec(PARALLEL, new RFWrite))
-  val unreserved_head: Valid[UInt] = Output(Valid(UInt(log2Ceil(ROB.BUF_SIZE).W)))
+  val unreserved_head: Vec[Valid[UInt]] = Output(Vec(PARALLEL, Valid(UInt(log2Ceil(ROB.BUF_SIZE).W))))
 }
 
 class ROBEntry extends Bundle with ROBEntryT
 trait ROBEntryT extends ROBGraduateT {
-  val empty: Bool = Bool()
+  val reserved: Bool = Bool()
   val committable: Bool = Bool()
 }
 
@@ -31,120 +31,85 @@ class ROB extends Module {
   val io: ROBIO = IO(new ROBIO)
 
   val buf_init: ROBEntry = Wire(new ROBEntry)
-  buf_init.empty := true.B
 
+  buf_init.reserved := false.B
   buf_init.committable := false.B
 
   buf_init.data := 0.U
   buf_init.ctrl := InstInfo.nop
-  // buf_init.rd_addr := 0.U
-  // buf_init.is_halt := false.B
-  // buf_init.reg_w := false.B
-  // buf_init.mem_r := false.B
-  // buf_init.mem_w := false.B
-
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
-  val uncommited_head_r: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
-  val unreserved_head_r: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
 
-  // graduatesの中ではじめに失敗している命令を抽出
-  // TODO: 複数分岐命令が同時にgraduateした際にバグる可能性が高い
-  //  リングバッファ上のアドレスのみで、古いほうの分岐命令をselectするのは無理なので、なにか仕組みを導入する必要がある
-  val first_mispredicted: Valid[ROBGraduate] = io.graduate.reduceTree(
-    (g1: Valid[ROBGraduate], g2: Valid[ROBGraduate]) => Mux(g1.valid && g1.bits.mispredicted, g1, g2))
-  val mispredicted_addr: Valid[UInt] = Wire(Valid(UInt()))
-  mispredicted_addr.valid :=
-    first_mispredicted.valid && first_mispredicted.bits.mispredicted && !buf(first_mispredicted.bits.addr).empty
-  mispredicted_addr.bits := first_mispredicted.bits.addr
-  printf("mispredicted_rob: %d | %d\n", mispredicted_addr.valid, mispredicted_addr.bits)
+  val uncommited: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
+  val commitable: Vec[Bool] = WireDefault(VecInit(
+    (0 until PARALLEL).map(i => buf(uncommited + i.U).committable)))
+  val can_commit_cnt_v: Vec[Bool] = Wire(Vec(PARALLEL, Bool()))
+  can_commit_cnt_v(0) := commitable(0)
+  for (i <- 1 until PARALLEL) can_commit_cnt_v(i) := can_commit_cnt_v(i-1) && commitable(i)
+  // いくつcommit出来るか求める
+  val can_commit_cnt: UInt = can_commit_cnt_v.count((x: Bool) => x)
+  val next_uncommited: UInt = uncommited+can_commit_cnt
+  uncommited := next_uncommited
 
-  val unreserved_head: Valid[UInt] = Wire(Valid(UInt(log2Ceil(ROB.BUF_SIZE).W)))
-  // ROBがreserveされた分だけ進める(不可能なら進めない)
-  val next_unreserved_head: UInt = unreserved_head_r + io.used_num
-  val next_unreserved_head_available: Bool = buf(next_unreserved_head).empty
-  printf("next_rob: %d | %d\n", next_unreserved_head_available, next_unreserved_head)
+  val mispredicted_first: Valid[ROBGraduate] = io.graduate.reduceTree((g1: Valid[ROBGraduate], g2: Valid[ROBGraduate]) => Mux(g1.valid && g1.bits.mispredicted, g1, g2))
+  val mispredicted: Bool = mispredicted_first.valid && mispredicted_first.bits.mispredicted
+  val restore_rob_addr: UInt = mispredicted_first.bits.addr
 
-  when (mispredicted_addr.valid) {
-    // 分岐予測失敗時、分岐命令のROB Addrまで巻き戻す
-    unreserved_head.valid := mispredicted_addr.valid
-    unreserved_head.bits := mispredicted_addr.bits
-  } .otherwise {
-    unreserved_head.valid := next_unreserved_head_available
-    unreserved_head.bits := next_unreserved_head
-  }
-  printf("rob: %d | %d\n", unreserved_head.valid, unreserved_head.bits)
+  val unreserved: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
+  val unreserved_add_used: UInt = unreserved + io.used_num
+  val unreserved_add_used_valid: Bool = !buf(unreserved_add_used).reserved
+  val next_unreserved: UInt = MuxCase(unreserved, Seq(
+    mispredicted -> restore_rob_addr,
+    unreserved_add_used_valid -> unreserved_add_used
+  ))
+  unreserved := next_unreserved
 
-  unreserved_head_r := Mux(unreserved_head.valid, unreserved_head.bits, unreserved_head_r)
-  io.unreserved_head.valid := RegNext(unreserved_head.valid, true.B) // 初期はすべてのROBが確保可能
-  io.unreserved_head.bits := unreserved_head_r
-
-  // このROB Entryをcommitするかどうか
-  val committable: Vec[Bool] = Wire(Vec(PARALLEL, Bool()))
-  for (i <- committable.indices) {
-    val addr: UInt = uncommited_head_r + i.U
-    if (i == 0) {
-      committable(i) := buf(addr).committable
-    } else {
-      committable(i) := committable(i-1) && buf(addr).committable
-    }
-  }
-  val committable_cnt: UInt = committable.count(x => x)
-  uncommited_head_r := uncommited_head_r + committable_cnt
-  printf(s"commmitable_cnt: %d\n", committable_cnt)
-
-  // commit初期値
-  for (i <- io.commit.indices) {
-    io.commit(i).rf_w := false.B; io.commit(i).rd_addr := 0.U; io.commit(i).data := 0.U
-  }
   for (i <- buf.indices) {
-    // mispredictedのロジックがバグってる
-    when (mispredicted_addr.valid && uncommited_head_r < unreserved_head_r && (
-      mispredicted_addr.bits <= i.U && i.U < unreserved_head_r)) {
-      // mispredicted時、分岐に依存した命令は取り消す必要がある(不要なロジックも可能なので、そのようなものも考えても良い)
+    val graduate: Valid[ROBGraduate] = io.graduate.reduceTree((g1: Valid[ROBGraduate], g2: Valid[ROBGraduate]) =>
+      Mux(g1.valid && g1.bits.addr === i.U, g1, g2))
 
-      // mispredicted_addr <= i < uncommittedの命令が取り消す対象になるが
-      // bufはリングバッファなので(i%buf.sizeなので)位置関係によって変わってくる
+    val mispredict_restore_entry: Bool = (mispredicted && (
+        (restore_rob_addr <= unreserved && restore_rob_addr <= i.U && i.U < unreserved) ||
+        (restore_rob_addr > unreserved && (i.U < unreserved || restore_rob_addr <= i.U))
+      ))
+    val reserve_entry = !mispredicted && (
+      ((unreserved <= next_unreserved) && (unreserved <= i.U && i.U < next_unreserved)) ||
+      ((unreserved > next_unreserved) && (i.U < next_unreserved || unreserved <= i.U))
+    )
+    val commit_entry = (
+      ((uncommited <= next_uncommited) && (uncommited <= i.U && i.U < next_uncommited)) ||
+      ((uncommited >  next_uncommited) && (i.U < next_uncommited || uncommited <= i.U))
+    )
+    val store_entry = graduate.valid && graduate.bits.addr === i.U
 
-      // uncommitted, mispredicted, 取り消す対象, unreservedの並びの時
-      buf(i).empty := true.B
-    } .elsewhen(mispredicted_addr.valid && uncommited_head_r > unreserved_head_r && (
-      i.U < unreserved_head_r || mispredicted_addr.bits <= i.U )) {
-        // 取り消す対象, unreserved, uncommitted, mispredicted, 取り消す対象の並びの時
-        buf(i).empty := true.B
-    } .elsewhen(buf(i).empty && unreserved_head_r <= i.U && i.U < unreserved_head_r+io.used_num) {
-      // dispatch
-      buf(i).empty := false.B
+    printf("buf(%d) | mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d\n", i.U, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data)
+
+    when(mispredict_restore_entry) {
+      buf(i).reserved := false.B
       buf(i).committable := false.B
-    } .elsewhen(uncommited_head_r <= i.U && i.U < uncommited_head_r+committable_cnt) {
-      // commit
-      buf(i).empty := true.B
-      val l = i.U - uncommited_head_r
-      printf(s"commit(%d).data = %d\n", l, buf(i).data)
-      io.commit(l).rf_w := buf(i).ctrl.rf_w
-      io.commit(l).rd_addr := buf(i).ctrl.rd_addr
-      io.commit(l).data := buf(i).data
-    } .otherwise {
-      // graduate
-      // EX, MAから出てくるデータを取り込む、それらのデータはDispatch, Commitの対象になることはないので問題なし
-
-      val graduate = io.graduate.reduceTree((g1: Valid[ROBGraduate], g2: Valid[ROBGraduate]) =>
-        Mux(g1.valid && g1.bits.addr === i.U, g1, g2))
-
-      when (graduate.valid && i.U === graduate.bits.addr) {
-        buf(i).committable := true.B
-        buf(i).ctrl := graduate.bits.ctrl
-        // buf(i).is_halt := graduate.bits.is_halt
-        // buf(i).reg_w := graduate.bits.reg_w
-        // buf(i).mem_r := graduate.bits.mem_r
-        // buf(i).mem_w := graduate.bits.mem_w
-        // buf(i).rd_addr := graduate.bits.rd_addr
-        buf(i).data := graduate.bits.data
-      }
+    } .elsewhen(reserve_entry) {
+      buf(i).reserved := true.B
+    } .elsewhen(commit_entry) {
+      buf(i).reserved := false.B
+      buf(i).committable := false.B
+    } .elsewhen(store_entry) {
+      buf(i).committable := true.B
+      buf(i).data := graduate.bits.data
+      buf(i).ctrl := graduate.bits.ctrl
     }
   }
-  for (i <- 0 until 9) {
-    printf("buf(%d): empty: %d | commitable: %d | rw: %d | data: %d\n", i.U,
-      buf(i).empty, buf(i).committable, buf(i).ctrl.rf_w, buf(i).data)
+
+  for (i <- 0 until PARALLEL) {
+    val commit_entry = buf(uncommited + i.U)
+    io.commit(i).rf_w := i.U < can_commit_cnt && commit_entry.ctrl.rf_w
+    io.commit(i).rd_addr := commit_entry.ctrl.rd_addr
+    io.commit(i).data := commit_entry.data
   }
-  printf("------------------------------\n")
+  for (i <- 0 until PARALLEL) {
+    io.unreserved_head(i).valid := unreserved_add_used_valid && !mispredicted
+    io.unreserved_head(i).bits := unreserved + i.U
+  }
+  printf("unreserved: %d, next_unreserved: %d\n", unreserved, next_unreserved)
+  printf("uncommited: %d, next_uncommited: %d, can_commit_cnt: %d\n", uncommited, next_uncommited, can_commit_cnt)
+  printf("mispredicted: %d, unreserved_add_used_valid: %d\n", mispredicted, unreserved_add_used_valid)
+  printf("-----------------------------------\n")
 }
