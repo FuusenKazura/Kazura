@@ -36,7 +36,8 @@ class ROB extends Module {
   buf_init.committable := false.B
 
   buf_init.data := 0.U
-  buf_init.inst_info := Ctrl.nop
+  buf_init.inst_info.rd_addr := 0.U
+  buf_init.inst_info.ctrl := Ctrl.nop
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
 
   val uncommited: UInt = RegInit(0.U(log2Ceil(ROB.BUF_SIZE).W))
@@ -81,20 +82,23 @@ class ROB extends Module {
     )
     val store_entry = graduate.valid && graduate.bits.addr === i.U
 
-    printf("buf(%d) | mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d\n", i.U, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data)
+    if (i < 6) {
+      printf("buf(%d) | mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
+        i.U, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
+    }
 
     when(mispredict_restore_entry) {
       buf(i).reserved := false.B
       buf(i).committable := false.B
     } .elsewhen(reserve_entry) {
       buf(i).reserved := true.B
-    } .elsewhen(commit_entry) {
-      buf(i).reserved := false.B
-      buf(i).committable := false.B
-    } .elsewhen(store_entry) {
+    }.elsewhen(store_entry) {
       buf(i).committable := true.B
       buf(i).data := graduate.bits.data
       buf(i).inst_info := graduate.bits.inst_info
+    } .elsewhen(commit_entry) {
+      buf(i).reserved := false.B
+      buf(i).committable := false.B
     }
   }
 
@@ -108,6 +112,7 @@ class ROB extends Module {
     io.unreserved_head(i).valid := unreserved_add_used_valid && !mispredicted
     io.unreserved_head(i).bits := unreserved + i.U
   }
+
   printf("unreserved: %d, next_unreserved: %d\n", unreserved, next_unreserved)
   printf("uncommited: %d, next_uncommited: %d, can_commit_cnt: %d\n", uncommited, next_uncommited, can_commit_cnt)
   printf("mispredicted: %d, unreserved_add_used_valid: %d\n", mispredicted, unreserved_add_used_valid)
