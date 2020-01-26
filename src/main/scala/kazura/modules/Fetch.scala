@@ -21,6 +21,7 @@ class Fetch extends Module  {
   val next_pc: UInt = io.prev_pc + 1.U
 
   io.out.pc := MuxCase(next_pc, Seq(
+    io.in.is_halt -> io.prev_pc,
     // 分岐予測に失敗していた場合
     (io.in.branch_graduated && io.in.branch_mispredicted) -> io.in.restoration_pc,
     // Jump命令をデコードした場合

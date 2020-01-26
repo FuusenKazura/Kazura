@@ -84,8 +84,8 @@ class ROB extends Module {
     )
     val store_entry = graduate.valid && graduate.bits.addr === i.U
 
-    printf("buf(%d) | pc: %d, total_cnt: %d, mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
-      i.U, buf(i).inst_info.pc, buf(i).inst_info.total_cnt, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
+    // printf("buf(%d) | pc: %d, total_cnt: %d, mispredict: %d, reserve: %d, commit: %d, store: %d | reserved: %d, commitable: %d, data: %d, rf_w: %d\n",
+    //   i.U, buf(i).inst_info.pc, buf(i).inst_info.total_cnt, mispredict_restore_entry, reserve_entry, commit_entry, store_entry, buf(i).reserved, buf(i). committable, buf(i).data, buf(i).inst_info.ctrl.rf_w)
 
     when(mispredict_restore_entry && store_entry) {
       // mispredictとstoreは同時に発生しうる
@@ -130,18 +130,18 @@ class ROB extends Module {
       io.commit_inst_info(i) := InstInfo.nop
       io.commit_rd(i) := 0.U
     }
-    for (i <- io.commit.indices) {
-      printf("commit(%d): rfw: %d, rd: %d, rob: %d, mispredict: %d, data: %d\n",
-        i.U,io.commit(i).rf_w,io.commit(i).rd_addr,io.commit(i).rob_addr,io.commit(i).mispredict,io.commit(i).data)
-    }
+    // for (i <- io.commit.indices) {
+    //   printf("commit(%d): rfw: %d, rd: %d, rob: %d, mispredict: %d, data: %d\n",
+    //     i.U,io.commit(i).rf_w,io.commit(i).rd_addr,io.commit(i).rob_addr,io.commit(i).mispredict,io.commit(i).data)
+    // }
   }
   for (i <- 0 until PARALLEL) {
     io.unreserved_head(i).valid := unreserved_add_used_valid
     io.unreserved_head(i).bits := unreserved + i.U
   }
 
-  printf("unreserved: %d, next_unreserved: %d\n", unreserved, next_unreserved)
-  printf("uncommited: %d, next_uncommited: %d, can_commit_cnt: %d\n", uncommited, next_uncommited, can_commit_cnt)
-  printf("mispredicted: %d, unreserved_add_used_valid: %d\n", mispredicted, unreserved_add_used_valid)
-  printf("-----------------------------------\n")
+  // printf("unreserved: %d, next_unreserved: %d\n", unreserved, next_unreserved)
+  // printf("uncommited: %d, next_uncommited: %d, can_commit_cnt: %d\n", uncommited, next_uncommited, can_commit_cnt)
+  // printf("mispredicted: %d, unreserved_add_used_valid: %d\n", mispredicted, unreserved_add_used_valid)
+  // printf("-----------------------------------\n")
 }

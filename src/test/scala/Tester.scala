@@ -6,8 +6,8 @@ import modules.{BPTester, FetchUnitTester, ROBUnitTester}
 import stages.{BusyBitUnitTest, RFUnitTester}
 
 class Tester extends ChiselFlatSpec {
-  // private val backendNames = Array("firrtl")
-  private val backendNames = Array("verilator", "firrtl")
+  private val backendNames = Array("firrtl")
+  // private val backendNames = Array("verilator", "firrtl")
 
   for ( backendName <- backendNames ) {
     // behavior of "modules"
@@ -63,11 +63,11 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SimpleBgtUnitTester(c)
     //   } should be (true)
     // }
-    "Hart" should s"Simple Load And Store Memory Test (with $backendName)" in {
-      Driver(() => new Hart(SimpleMemUnitTest.instructions), backendName) {
-        c: Hart => new SimpleMemUnitTest.Tester(c)
-      } should be (true)
-    }
+    // "Hart" should s"Simple Load And Store Memory Test (with $backendName)" in {
+    //   Driver(() => new Hart(SimpleMemUnitTest.instructions), backendName) {
+    //     c: Hart => new SimpleMemUnitTest.Tester(c)
+    //   } should be (true)
+    // }
     // "Hart" should s"Sum Beq Loop unit test (with $backendName)" in {
     //   Driver(() => new Hart(SimpleUnitTest.sumBeqUnitTest), backendName) {
     //     c: Hart => new SumUnitTester(c)
@@ -78,10 +78,10 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SumUnitTester(c)
     //   } should be (true)
     // }
-    // "Problem" should s"1 test (with $backendName)" in {
-    //   Driver(() => new Hart(Problem1.instructions), backendName) {
-    //     c: Hart => new Problem1.Tester(c)
-    //   } should be (true)
-    // }
+    "Problem" should s"1 test (with $backendName)" in {
+      Driver(() => new Hart(Problem1.instructions), backendName) {
+        c: Hart => new Problem1.Tester(c)
+      } should be (true)
+    }
   }
 }

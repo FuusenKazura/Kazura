@@ -18,6 +18,7 @@ class IFIn extends Bundle {
   val jump_pc: UInt = UInt(LEN.W)
 
   val stall: Bool = Bool()
+  val is_halt: Bool = Bool()
 }
 class IFOut extends Bundle {
   val pc: UInt = UInt(LEN.W)
@@ -34,7 +35,10 @@ class IF(val im: Seq[UInt] = (0 until 256).map(_.U)) extends Module {
   val inst_mem: Vec[UInt] = RegInit(VecInit(im))
   val pc: UInt = RegInit(0.U(LEN.W))
   val total_cnt: UInt = RegInit(0.U(LEN.W))
-  total_cnt := total_cnt + 1.U(LEN.W)
+  total_cnt := Mux(
+    io.in.is_halt,
+    total_cnt,
+    total_cnt + 1.U(LEN.W))
 
   val fetch: Fetch = Module(new Fetch)
   fetch.io.in.predict := io.in.predict
@@ -47,6 +51,7 @@ class IF(val im: Seq[UInt] = (0 until 256).map(_.U)) extends Module {
   fetch.io.in.is_jump := io.in.is_jump
   fetch.io.in.jump_pc := io.in.jump_pc
   fetch.io.in.stall := io.in.stall
+  fetch.io.in.is_halt := io.in.is_halt
 
   fetch.io.prev_pc := pc
 
@@ -54,5 +59,9 @@ class IF(val im: Seq[UInt] = (0 until 256).map(_.U)) extends Module {
 
   io.out.pc := pc
   io.out.total_cnt := total_cnt
-  io.out.inst_bits := inst_mem(pc).asTypeOf(new InstBits)
+  io.out.inst_bits := Mux(
+    io.in.is_halt,
+    0.U.asTypeOf(new InstBits),
+    inst_mem(pc).asTypeOf(new InstBits)
+  )
 }

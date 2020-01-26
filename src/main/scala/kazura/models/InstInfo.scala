@@ -30,6 +30,7 @@ object InstInfo {
     n.alu_op := Nop.alu_op
     n.is_jump := Nop.is_jump
     n.is_branch := Nop.is_branch
+    n.is_halt := Nop.is_halt
     n.rf_w := Nop.rf_w
     n.mem_r := Nop.mem_r
     n.mem_w := Nop.mem_w

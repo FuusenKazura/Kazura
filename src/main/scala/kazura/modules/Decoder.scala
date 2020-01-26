@@ -15,12 +15,13 @@ class IDIO extends Bundle {
 
 class Decoder extends Module {
   val io: IDIO = IO(new IDIO)
-  val insts: Seq[Inst] = Seq(Add, Sub, And, Or, Addi, Subi, Incr, Incr, Decr, Ldi, Ld, St, Beq, Bgt, Jump, Nop)
+  val insts: Seq[Inst] = Seq(Add, Sub, And, Or, Addi, Subi, Incr, Incr, Decr, Ldi, Ld, St, Beq, Bgt, Jump, Nop, Halt)
 
   def conDecodeCell[A <: Inst](inst: A): Unit = {
     io.ctrl.alu_op    := inst.alu_op
     io.ctrl.is_jump   := inst.is_jump
     io.ctrl.is_branch := inst.is_branch
+    io.ctrl.is_halt   := inst.is_halt
     io.ctrl.rf_w      := inst.rf_w
     io.ctrl.mem_r     := inst.mem_r
     io.ctrl.mem_w     := inst.mem_w

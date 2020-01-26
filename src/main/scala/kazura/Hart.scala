@@ -30,6 +30,7 @@ class HartIO extends Bundle {
   val pc: UInt = Output(UInt(LEN.W))
   val total_cnt: UInt = Output(UInt(LEN.W))
   val rf: Vec[UInt] = Output(Vec(RF.NUM, UInt(LEN.W)))
+  val is_halt: Bool = Output(Bool())
 }
 
 class Hart(val im: Seq[UInt]) extends Module {
@@ -40,6 +41,10 @@ class Hart(val im: Seq[UInt]) extends Module {
   val s_ex: EX = Module(new EX)
   val s_im: IM = Module(new IM)
   val m_rob: ROB = Module(new ROB)
+
+  val is_halt: Bool = RegInit(false.B)
+  is_halt := is_halt | m_rob.io.commit_inst_info(0).ctrl.is_halt
+  io.is_halt := is_halt
 
   val predict: Bool = m_bp.io.predict // 分岐予測器からの出力
   // --------------------
@@ -56,6 +61,7 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_if.io.in.jump_pc := s_id.io.jump_pc
 
   s_if.io.in.stall := s_id.io.stall
+  s_if.io.in.is_halt := is_halt
 
   // --------------------
   // BP
@@ -117,4 +123,5 @@ class Hart(val im: Seq[UInt]) extends Module {
   io.pc := s_if.io.out.pc
   io.total_cnt := s_if.io.out.total_cnt
   io.rf := s_id.io.rf4debug
+
 }
