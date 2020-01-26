@@ -9,6 +9,8 @@ class ROBIO extends Bundle {
   val used_num: UInt = Input(UInt(log2Ceil(PARALLEL + 1).W)) // 0 to PARALLEL, 先のクロックで、いくつROBが必要とされたか
   val graduate: Vec[Valid[ROBGraduate]] = Input(Vec(PARALLEL*2, Valid(new ROBGraduate))) // 今はALUの個数+メモリユニットからの個数個のgraduateがありえる
   val commit: Vec[RFWrite] = Output(Vec(PARALLEL, new RFWrite))
+  val commit_rd: Vec[UInt] = Output(Vec(PARALLEL, UInt(LEN.W)))
+  val commit_inst_info: Vec[InstInfo] = Output(Vec(PARALLEL, new InstInfo))
   val unreserved_head: Vec[Valid[UInt]] = Output(Vec(PARALLEL, Valid(UInt(log2Ceil(ROB.BUF_SIZE).W))))
 }
 
@@ -25,6 +27,7 @@ class ROBGraduate extends Bundle with ROBGraduateT {
 }
 trait ROBGraduateT {
   val data: UInt = UInt(LEN.W)
+  val rd: UInt = UInt(LEN.W)
   val inst_info: InstInfo = new InstInfo
 }
 
@@ -38,6 +41,7 @@ class ROB extends Module {
   buf_init.mispredicted := false.B
 
   buf_init.data := 0.U
+  buf_init.rd := 0.U
   buf_init.inst_info := InstInfo.nop
   val buf: Vec[ROBEntry] = RegInit(VecInit(Seq.fill(ROB.BUF_SIZE)(buf_init)))
 
@@ -87,6 +91,7 @@ class ROB extends Module {
       // mispredictとstoreは同時に発生しうる
       buf(i).mispredicted := true.B
       buf(i).committable := true.B
+      buf(i).rd := graduate.bits.rd
       buf(i).data := graduate.bits.data
       buf(i).inst_info := graduate.bits.inst_info
     } .elsewhen(mispredict_restore_entry) {
@@ -96,6 +101,7 @@ class ROB extends Module {
       buf(i).committable := false.B
     }.elsewhen(store_entry) {
       buf(i).committable := true.B
+      buf(i).rd := graduate.bits.rd
       buf(i).data := graduate.bits.data
       buf(i).inst_info := graduate.bits.inst_info
     } .elsewhen(commit_entry) {
@@ -113,12 +119,16 @@ class ROB extends Module {
       io.commit(i).rob_addr := uncommited + i.U
       io.commit(i).mispredict := commit_entry.mispredicted
       io.commit(i).data := commit_entry.data
+      io.commit_inst_info(i) := commit_entry.inst_info
+      io.commit_rd(i) := commit_entry.rd
     } .otherwise {
       io.commit(i).rf_w := false.B
       io.commit(i).rd_addr := 0.U
       io.commit(i).rob_addr := 0.U
       io.commit(i).mispredict := false.B
       io.commit(i).data := 655535.U
+      io.commit_inst_info(i) := InstInfo.nop
+      io.commit_rd(i) := 0.U
     }
     for (i <- io.commit.indices) {
       printf("commit(%d): rfw: %d, rd: %d, rob: %d, mispredict: %d, data: %d\n",

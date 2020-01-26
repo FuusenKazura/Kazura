@@ -2,6 +2,7 @@ package kazura
 
 import chisel3._
 import chisel3.util.experimental.BoringUtils
+import kazura.models.InstInfo
 import kazura.modules.{BranchPredictor, RFWrite, ROB}
 import kazura.util.Params._
 import kazura.stages._
@@ -70,14 +71,8 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_id.io.branch_mispredicted := s_ex.io.mispredicted
   s_id.io.branch_graduated := s_ex.io.inst_info_out.ctrl.is_branch
   s_id.io.if_out := s_if.io.out
-  val rfwrite_nop: RFWrite = Wire(new RFWrite)
-  rfwrite_nop.rf_w := false.B
-  rfwrite_nop.mispredict := false.B
-  rfwrite_nop.rd_addr := 0.U
-  rfwrite_nop.rob_addr := 0.U
-  rfwrite_nop.data := 0.U
   s_id.io.commit(0) := m_rob.io.commit(0)
-  s_id.io.commit(1) := rfwrite_nop
+  s_id.io.commit(1) := s_im.io.mem_out
   s_id.io.unreserved_head := m_rob.io.unreserved_head
 
   // --------------------
@@ -92,23 +87,30 @@ class Hart(val im: Seq[UInt]) extends Module {
 
   // --------------------
   // IM
-  s_im.io.inst_info := s_ex.io.inst_info_out
-  s_im.io.alu_out := s_ex.io.alu_out
-  s_im.io.rd_out := s_ex.io.rd_out
+  s_im.io.inst_info := m_rob.io.commit_inst_info(0)
+  s_im.io.rob_out := m_rob.io.commit(0)
+  s_im.io.rd_out := m_rob.io.commit_rd(0)
 
   // --------------------
   // ROB
   m_rob.io.used_num := s_id.io.used_num
   m_rob.io.graduate(0).valid := s_ex.io.inst_info_out.valid
   m_rob.io.graduate(0).bits.addr := s_ex.io.inst_info_out.rob_addr
+  m_rob.io.graduate(0).bits.rd := s_ex.io.rd_out
   m_rob.io.graduate(0).bits.mispredicted := s_ex.io.mispredicted
   m_rob.io.graduate(0).bits.inst_info := s_ex.io.inst_info_out
   m_rob.io.graduate(0).bits.data := s_ex.io.alu_out
-  m_rob.io.graduate(1).valid := s_im.io.inst_info.valid
-  m_rob.io.graduate(1).bits.addr := s_im.io.inst_info.rob_addr
+  // m_rob.io.graduate(1).valid := s_im.io.inst_info.valid
+  // m_rob.io.graduate(1).bits.addr := s_im.io.inst_info.rob_addr
+  // m_rob.io.graduate(1).bits.mispredicted := false.B
+  // m_rob.io.graduate(1).bits.inst_info := s_im.io.inst_info
+  // m_rob.io.graduate(1).bits.data := s_im.io.mem_out
+  m_rob.io.graduate(1).valid := false.B
+  m_rob.io.graduate(1).bits.addr := 0.U
+  m_rob.io.graduate(1).bits.rd := 0.U
   m_rob.io.graduate(1).bits.mispredicted := false.B
-  m_rob.io.graduate(1).bits.inst_info := s_im.io.inst_info
-  m_rob.io.graduate(1).bits.data := s_im.io.mem_out
+  m_rob.io.graduate(1).bits.inst_info := InstInfo.nop
+  m_rob.io.graduate(1).bits.data := 0.U
 
   // --------------------
   // IO
