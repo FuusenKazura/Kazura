@@ -53,7 +53,7 @@ class BranchPredictor(val size: Int = 32) extends Module {
   // 学習には2クロックの遅延が必要
   // 連続して同じアドレスを更新することは考えづらいので大丈夫
   val addr: UInt = RegNext(io.learning.bits.pc)
-  val updated: UInt = RegNext(update(io.learning.bits.result, table.read(io.learning.bits.pc)))
+  val updated: UInt = update(io.learning.bits.result, table.read(io.learning.bits.pc))
   when (RegNext(io.learning.valid, false.B)) {
     table.write(addr, updated)
   }

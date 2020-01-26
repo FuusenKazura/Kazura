@@ -124,3 +124,23 @@ class SumUnitTester(m: Hart) extends PeekPokeTester(m) {
   step(200)
   expect(m.io.rf(4), (0 to 10).sum)
 }
+
+object Problem1 extends HasInstructions {
+  val instructions: Seq[UInt] = Seq(
+    "b1001_001_0_1111_1010".U, // 0: $1 = 250
+    "b1001_010_0_0000_0000".U, // 1: $2 = 0
+    "b1001_011_0_0000_0001".U, // 2: $3 = 1
+    "b0001_010_011_00_0000".U, // 3: $2 += $3
+    "b0101_011_000_00_0001".U, // 4: $3 += 1
+    "b1101_001_010_11_1110".U, // 5: if($1 > $2) pc -= 2
+    "b0110_011_000_00_0001".U, // 6: r3 -= 1
+    "b0010_010_011_00_0000".U, // 7: r2 -= $3
+  ) ++ Seq.fill(100)("h0000".U)
+  class Tester(m: Hart) extends PeekPokeTester(m) {
+    step(200)
+    expect(m.io.rf(2), 231)
+    // expect(m.io.rf(3), 11)
+    // expect(m.io.rf(4), 12)
+    // expect(m.io.rf(5), 13)
+  }
+}

@@ -72,7 +72,9 @@ class Hart(val im: Seq[UInt]) extends Module {
   s_id.io.if_out := s_if.io.out
   val rfwrite_nop: RFWrite = Wire(new RFWrite)
   rfwrite_nop.rf_w := false.B
+  rfwrite_nop.mispredict := false.B
   rfwrite_nop.rd_addr := 0.U
+  rfwrite_nop.rob_addr := 0.U
   rfwrite_nop.data := 0.U
   s_id.io.commit(0) := m_rob.io.commit(0)
   s_id.io.commit(1) := rfwrite_nop

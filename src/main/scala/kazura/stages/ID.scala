@@ -134,13 +134,16 @@ class ID extends Module {
   io.rd := RegNext(reg_file.io.out(0))
   io.pc := RegNext(if_out.pc)
   // printf("cnt: %d, pc: %d, op: %d\n", if_out.total_cnt, if_out.pc, if_out.inst_bits.op)
-  printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
-  printf("stall: %d, !operands_avail: %d, !rob_avail(0): %d\n", stall, !operands_available, !rob_available(0))
+  // printf("branch_mispredicted_enable: %d, branch_mispredicted: %d\n", io.branch_graduated, io.branch_mispredicted)
+  // printf("stall: %d, !operands_avail: %d, !rob_avail(0): %d\n", stall, !operands_available, !rob_available(0))
   // printf("alu_op: %d\n", decoder.io.ctrl.alu_op)
-  printf("source(0): %d\n", io.source(0))
-  printf("source(1): %d\n", io.source(1))
-  printf("next_addr: %d\n", io.jump_pc)
-  printf("----------\n")
+  // printf("source(0): %d\n", io.source(0))
+  // printf("source(1): %d\n", io.source(1))
+  // printf("next_addr: %d\n", io.jump_pc)
+  // printf("rf: ")
+  // for (i <- reg_file.io.rf4debug.indices) printf("%d, ", reg_file.io.rf4debug(i))
+  // printf("\n")
+  // printf("----------\n")
 
   io.rf4debug := reg_file.io.rf4debug
 }

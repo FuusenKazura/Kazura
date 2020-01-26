@@ -28,9 +28,10 @@ class BusyBit extends Module {
   }
 
   for (i <- 0 until RF.WRITE_PORT; l <- 0 until RF.NUM) {
-    when(io.branch_graduated && io.branch_mispredicted) { // 分岐予測に失敗すると状態をリセット
-      busy_bit(io.release(i).rd_addr) := false.B
-    } .elsewhen (io.release(i).rf_w && io.release(i).rd_addr === l.U) { // releaseとreserveが同じbusy_bitに起こることは無いので安全
+    // when(io.branch_graduated && io.branch_mispredicted) { // 分岐予測に失敗すると状態をリセット
+    //   busy_bit(io.release(i).rd_addr) := false.B
+    // } .elsewhen (io.release(i).rf_w && io.release(i).rd_addr === l.U) { // releaseとreserveが同じbusy_bitに起こることは無いので安全
+    when (io.release(i).rf_w && io.release(i).rd_addr === l.U) {
       busy_bit(io.release(i).rd_addr) := false.B
     } .elsewhen (io.req_rd_w && io.req_rd_addr === l.U) {
       busy_bit(io.req_rd_addr) := true.B
