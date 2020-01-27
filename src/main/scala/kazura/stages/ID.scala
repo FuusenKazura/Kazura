@@ -62,7 +62,7 @@ class ID extends Module {
   busy_bit.io.req_rs_addr(1) := if_out.inst_bits.rs
   // stallする命令ではrdを確保しない
   val clear_instruction: Bool = Wire(Bool())
-  busy_bit.io.req_rd_w := !clear_instruction && !stall && decoder.io.ctrl.rf_w
+  busy_bit.io.req_rd_w := !clear_instruction && !stall && (decoder.io.ctrl.rf_w || decoder.io.ctrl.mem_r)
   busy_bit.io.req_rd_addr := if_out.inst_bits.rd
 
   // # clear_instruction

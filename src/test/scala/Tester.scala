@@ -6,8 +6,8 @@ import modules.{BPTester, FetchUnitTester, ROBUnitTester}
 import stages.{BusyBitUnitTest, RFUnitTester}
 
 class Tester extends ChiselFlatSpec {
-  private val backendNames = Array("firrtl")
-  // private val backendNames = Array("verilator", "firrtl")
+  // private val backendNames = Array("firrtl")
+  private val backendNames = Array("verilator", "firrtl")
 
   for ( backendName <- backendNames ) {
     // behavior of "modules"
@@ -78,9 +78,20 @@ class Tester extends ChiselFlatSpec {
     //     c: Hart => new SumUnitTester(c)
     //   } should be (true)
     // }
-    "Problem" should s"1 test (with $backendName)" in {
-      Driver(() => new Hart(Problem1.instructions), backendName) {
-        c: Hart => new Problem1.Tester(c)
+    behavior of "Problem"
+    // "1" should s"test (with $backendName)" in {
+    //   Driver(() => new Hart(Problem1.instructions), backendName) {
+    //     c: Hart => new Problem1.Tester(c)
+    //   } should be (true)
+    // }
+    // "2A" should s"test (with $backendName)" in {
+    //   Driver(() => new Hart(Problem2A.instructions), backendName) {
+    //     c: Hart => new Problem2A.Tester(c)
+    //   } should be (true)
+    // }
+    "3B" should s"test (with $backendName)" in {
+      Driver(() => new Hart(Problem3B.instructions), backendName) {
+        c: Hart => new Problem3B.Tester(c)
       } should be (true)
     }
   }

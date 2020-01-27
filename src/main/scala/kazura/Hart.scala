@@ -46,7 +46,8 @@ class Hart(val im: Seq[UInt]) extends Module {
   is_halt := is_halt | m_rob.io.commit_inst_info(0).ctrl.is_halt
   io.is_halt := is_halt
 
-  val predict: Bool = m_bp.io.predict // 分岐予測器からの出力
+  // val predict: Bool = m_bp.io.predict // 分岐予測器からの出力
+  val predict: Bool = false.B // 分岐予測器からの出力
   // --------------------
   // IF
   s_if.io.in.predict := predict

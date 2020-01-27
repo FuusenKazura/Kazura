@@ -32,6 +32,6 @@ class Fetch extends Module  {
     io.in.stall -> io.prev_pc
   ))
 
-  printf("pc: %d, next_pc: %d, branch_mispredicted_enable: %d, branch_mispredicted: %d, restore_pc: %d\n",
-    io.prev_pc, io.out.pc, io.in.branch_graduated, io.in.branch_mispredicted, io.in.restoration_pc)
+  // printf("pc: %d, next_pc: %d, branch_mispredicted_enable: %d, branch_mispredicted: %d, restore_pc: %d\n",
+  //   io.prev_pc, io.out.pc, io.in.branch_graduated, io.in.branch_mispredicted, io.in.restoration_pc)
 }

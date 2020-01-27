@@ -52,8 +52,8 @@ class RegisterFile extends Module {
   //   printf(s"we: %d, addr: %d, data: %d\n", io.write(i).rf_w, io.write(i).rd_addr, io.write(i).data)
   // }
 
-  printf(s"rf: ")
-  for (i <- 0 until RF.NUM -1)
-    printf(s"$i:%d, ", rf(i))
-  printf(s"${RF.NUM -1}:%d\n", rf(RF.NUM -1))
+  // printf(s"rf: ")
+  // for (i <- 0 until RF.NUM -1)
+  //   printf(s"$i:%d, ", rf(i))
+  // printf(s"${RF.NUM -1}:%d\n", rf(RF.NUM -1))
 }
