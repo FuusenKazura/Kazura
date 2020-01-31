@@ -83,7 +83,7 @@ class Hart(val im: Seq[UInt], val dummy_data: Seq[UInt]) extends Module {
   val s_if: IF = Module(new IF(im))
   val s_id: ID = Module(new ID)
   val s_ex: EX = Module(new EX)
-  val s_im: IM = Module(new IM(dummy_data))
+  val s_im: DataMemory = Module(new DataMemory(dummy_data))
   val m_rob: ROB = Module(new ROB)
 
   val is_halt: Bool = RegInit(false.B)
