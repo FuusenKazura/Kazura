@@ -79,18 +79,18 @@ class Tester extends ChiselFlatSpec {
     //   } should be (true)
     // }
     behavior of "Problem"
-    // "1" should s"test (with $backendName)" in {
-    //   Driver(() => new Hart(Problem1.instructions), backendName) {
-    //     c: Hart => new Problem1.Tester(c)
-    //   } should be (true)
-    // }
-    // "2A" should s"test (with $backendName)" in {
-    //   Driver(() => new Hart(Problem2A.instructions), backendName) {
-    //     c: Hart => new Problem2A.Tester(c)
-    //   } should be (true)
-    // }
+    "1" should s"test (with $backendName)" in {
+      Driver(() => new Hart(Problem1.instructions, kazura.Main.mem_init), backendName) {
+        c: Hart => new Problem1.Tester(c)
+      } should be (true)
+    }
+    "2A" should s"test (with $backendName)" in {
+      Driver(() => new Hart(Problem2A.instructions, kazura.Main.mem_init), backendName) {
+        c: Hart => new Problem2A.Tester(c)
+      } should be (true)
+    }
     "3B" should s"test (with $backendName)" in {
-      Driver(() => new Hart(Problem3B.instructions), backendName) {
+      Driver(() => new Hart(Problem3B.instructions, kazura.Main.mem_init), backendName) {
         c: Hart => new Problem3B.Tester(c)
       } should be (true)
     }

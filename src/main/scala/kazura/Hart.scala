@@ -20,9 +20,53 @@ object Main {
     "b1110_000_111111100".U,  // 7: pc = pc - 3 - 1
     "b0001_100_010_000000".U  // 8: $4 += $2
   )
+  // 大学指定の問題を解くのに必要なデータ
+  val mem_init = Seq(
+    "x7530".U,
+    "x1".U,
+    "x64".U,
+    "x8".U,
+    "x7d9".U,
+    "x64".U,
+    "x40".U,
+    "x3b".U,
+    "x57".U,
+    "x2" .U,
+    "x62".U,
+    "x44".U,
+    "x30".U,
+    "x54".U,
+    "x16".U,
+    "x2a".U,
+    "x45".U,
+    "x2d".U,
+    "x49".U,
+    "x29".U,
+    "x1f".U,
+    "x52".U,
+    "x2c".U,
+    "x5d".U,
+    "x48".U,
+    "x04".U,
+    "x5e".U,
+    "x1d".U,
+    "x38".U,
+    "x2b".U,
+    "x1c".U,
+    "x21".U,
+    "x3d".U,
+    "x4c".U,
+    "x03".U,
+    "x40".U,
+    "x34".U,
+    "x3a".U,
+    "xe".U,
+  )
   def main(args: Array[String]): Unit = {
     chisel3.Driver.execute(args, () => new Hart(
-      prog ++ Seq.fill(32 - prog.length)("h0000".U)))
+      prog ++ Seq.fill(32 - prog.length)("h0000".U),
+      mem_init ++ Seq.fill(256 - mem_init.length)("h0000".U),
+    ))
   }
 }
 
@@ -33,13 +77,13 @@ class HartIO extends Bundle {
   val is_halt: Bool = Output(Bool())
 }
 
-class Hart(val im: Seq[UInt]) extends Module {
+class Hart(val im: Seq[UInt], val dummy_data: Seq[UInt]) extends Module {
   val io: HartIO = IO(new HartIO)
   val m_bp: BranchPredictor = Module(new BranchPredictor())
   val s_if: IF = Module(new IF(im))
   val s_id: ID = Module(new ID)
   val s_ex: EX = Module(new EX)
-  val s_im: IM = Module(new IM)
+  val s_im: IM = Module(new IM(dummy_data))
   val m_rob: ROB = Module(new ROB)
 
   val is_halt: Bool = RegInit(false.B)

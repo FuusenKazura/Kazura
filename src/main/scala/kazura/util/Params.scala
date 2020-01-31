@@ -6,6 +6,7 @@ object Params {
   val LEN = 16 // 命令長
   val LEN_W = log2Ceil(LEN) // Log2(LEN)
   val PARALLEL = 1
+  val DEBUG = true
 
   object RF {
     val NUM = 8

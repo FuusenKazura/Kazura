@@ -16,50 +16,10 @@ class IMIO extends Bundle {
   val mem_out: RFWrite  = Output(new RFWrite)
 }
 
-class IM extends Module {
+class IM(val dummy_data: Seq[UInt]) extends Module {
   val io: IMIO = IO(new IMIO)
   // val mem: Mem[UInt] = Mem(MEM.NUM, UInt(LEN.W))
-  val mem: Vec[UInt] = RegInit(VecInit(Seq(
-    "x7530".U,
-    "x1".U,
-    "x64".U,
-    "x8".U,
-    "x7d9".U,
-    "x64".U,
-    "x40".U,
-    "x3b".U,
-    "x57".U,
-    "x2" .U,
-    "x62".U,
-    "x44".U,
-    "x30".U,
-    "x54".U,
-    "x16".U,
-    "x2a".U,
-    "x45".U,
-    "x2d".U,
-    "x49".U,
-    "x29".U,
-    "x1f".U,
-    "x52".U,
-    "x2c".U,
-    "x5d".U,
-    "x48".U,
-    "x04".U,
-    "x5e".U,
-    "x1d".U,
-    "x38".U,
-    "x2b".U,
-    "x1c".U,
-    "x21".U,
-    "x3d".U,
-    "x4c".U,
-    "x03".U,
-    "x40".U,
-    "x34".U,
-    "x3a".U,
-    "xe".U,
-  )))
+  val mem: Vec[UInt] = RegInit(VecInit(dummy_data))
   // loadMemoryFromFile(mem, "src/main/resources/memory.hex.txt")
   val out_data: UInt = Wire(UInt(LEN.W))
 
